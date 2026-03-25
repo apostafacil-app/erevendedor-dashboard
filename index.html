@@ -557,13 +557,19 @@ tr:hover td{background:#f8fafc;}
 
         <!-- Checagem e Notificações -->
         <div class="config-card">
-          <div class="config-card-header">
-            <div class="config-card-icon green">⏰</div>
-            <div>
-              <div class="config-card-title">Checagem e Notificações</div>
-              <div class="config-card-sub">Defina os horários e dias para cada notificação automática</div>
+          <div class="config-card-header" style="justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:14px">
+              <div class="config-card-icon green">⏰</div>
+              <div>
+                <div class="config-card-title">Checagem e Notificações</div>
+                <div class="config-card-sub">Defina os horários e dias para cada notificação automática</div>
+              </div>
             </div>
+            <button class="btn btn-secondary" id="btn-check-agora" onclick="executarChecagemAgora()" style="white-space:nowrap">
+              ▶ Executar checagem agora
+            </button>
           </div>
+          <div id="check-agora-resultado" style="display:none;margin-bottom:12px;padding:10px 14px;border-radius:8px;font-size:13px"></div>
           <div class="config-grid">
             <div class="form-group">
               <label>Horário da checagem diária</label>
@@ -1342,6 +1348,37 @@ async function carregarConfiguracoes() {
     elWebhookToken.placeholder = c.asaasWebhookTokenDefinido ? 'Token definido — deixe em branco para manter' : 'Defina um token secreto para validar requests do Asaas';
     document.getElementById('cfg-admin-secret').value = '';
   } catch { toast('Erro ao carregar configurações', 'error'); }
+}
+
+async function executarChecagemAgora() {
+  const btn = document.getElementById('btn-check-agora');
+  const box = document.getElementById('check-agora-resultado');
+  btn.disabled = true;
+  btn.textContent = '⏳ Executando...';
+  box.style.display = 'none';
+
+  try {
+    const r = await api('/admin/check-agora', { method: 'POST' });
+    const data = await r.json();
+    if (r.ok) {
+      box.style.display = 'block';
+      box.style.background = '#f0fdf4';
+      box.style.border = '1px solid #bbf7d0';
+      box.style.color = '#166534';
+      box.innerHTML = `✅ Checagem concluída — <strong>${data.clientesProcessados ?? 0}</strong> clientes processados, <strong>${data.notificacoesEnviadas ?? 0}</strong> notificações enviadas.`;
+    } else {
+      throw new Error(data.erro || 'Erro desconhecido');
+    }
+  } catch (err) {
+    box.style.display = 'block';
+    box.style.background = '#fef2f2';
+    box.style.border = '1px solid #fecaca';
+    box.style.color = '#991b1b';
+    box.innerHTML = `❌ Erro: ${err.message}`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '▶ Executar checagem agora';
+  }
 }
 
 async function salvarConfiguracoes() {
