@@ -959,6 +959,14 @@ function renderKpis(kpis, porPlano) {
         <div class="kpi-trend">Trial → cliente pago</div>
       </div>
     </div>
+    <div class="kpi-card">
+      <div class="kpi-icon green">💰</div>
+      <div class="kpi-body">
+        <div class="kpi-value">${kpis.ltvMedio > 0 ? 'R$\u00a0' + kpis.ltvMedio.toLocaleString('pt-BR') : '—'}</div>
+        <div class="kpi-label">LTV médio</div>
+        <div class="kpi-trend">Receita média por cliente</div>
+      </div>
+    </div>
   `;
 }
 
