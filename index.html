@@ -660,6 +660,15 @@ tr:hover td{background:#f8fafc;}
               </select>
             </div>
           </div>
+          <div class="config-grid" style="margin-top:12px">
+            <div class="form-group span2">
+              <label>Token do Webhook <span style="font-size:11px;color:var(--text-dim)">(campo "Token de autenticação" no painel Asaas)</span></label>
+              <div class="pw-wrap">
+                <input type="password" id="cfg-asaas-webhook-token" placeholder="Defina um token secreto para validar requests do Asaas">
+                <button class="pw-toggle" onclick="togglePw('cfg-asaas-webhook-token', this)">👁</button>
+              </div>
+            </div>
+          </div>
           <div style="margin-top:18px;padding:14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;font-size:12px;color:var(--text-dim)">
             <strong style="color:var(--accent)">Webhook Asaas</strong> — cadastre esta URL no painel Asaas:<br>
             <code id="webhook-asaas-url" style="word-break:break-all;color:var(--accent);font-size:11px">—</code>
@@ -1310,6 +1319,7 @@ async function carregarConfiguracoes() {
     document.getElementById('cfg-token-loja').value = c.tokenLojaDefinido ? '••••••••' : '';
     document.getElementById('cfg-asaas-token').value = c.asaasTokenDefinido ? '••••••••' : '';
     document.getElementById('cfg-asaas-amb').value = c.asaasAmbiente || 'sandbox';
+    document.getElementById('cfg-asaas-webhook-token').value = c.asaasWebhookTokenDefinido ? '••••••••' : '';
     document.getElementById('cfg-admin-secret').value = '';
   } catch { toast('Erro ao carregar configurações', 'error'); }
 }
@@ -1326,6 +1336,7 @@ async function salvarConfiguracoes() {
     tokenLoja: document.getElementById('cfg-token-loja').value,
     asaasToken: document.getElementById('cfg-asaas-token').value,
     asaasAmbiente: document.getElementById('cfg-asaas-amb').value,
+    asaasWebhookToken: document.getElementById('cfg-asaas-webhook-token').value,
   };
 
   const novoSecret = document.getElementById('cfg-admin-secret').value.trim();
