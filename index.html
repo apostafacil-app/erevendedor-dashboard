@@ -1316,10 +1316,19 @@ async function carregarConfiguracoes() {
     document.getElementById('cfg-webhook').value = c.webhookNotificacaoUrl || '';
     document.getElementById('cfg-url-ativar').value = c.urlAtivarLoja || '';
     document.getElementById('cfg-url-desativar').value = c.urlDesativarLoja || '';
-    document.getElementById('cfg-token-loja').value = c.tokenLojaDefinido ? '••••••••' : '';
-    document.getElementById('cfg-asaas-token').value = c.asaasTokenDefinido ? '••••••••' : '';
+    const elTokenLoja = document.getElementById('cfg-token-loja');
+    elTokenLoja.value = '';
+    elTokenLoja.placeholder = c.tokenLojaDefinido ? 'Token definido — deixe em branco para manter' : 'Cole o token aqui';
+
+    const elAsaasToken = document.getElementById('cfg-asaas-token');
+    elAsaasToken.value = '';
+    elAsaasToken.placeholder = c.asaasTokenDefinido ? 'Token definido — deixe em branco para manter' : '$aact_xxxx';
+
     document.getElementById('cfg-asaas-amb').value = c.asaasAmbiente || 'sandbox';
-    document.getElementById('cfg-asaas-webhook-token').value = c.asaasWebhookTokenDefinido ? '••••••••' : '';
+
+    const elWebhookToken = document.getElementById('cfg-asaas-webhook-token');
+    elWebhookToken.value = '';
+    elWebhookToken.placeholder = c.asaasWebhookTokenDefinido ? 'Token definido — deixe em branco para manter' : 'Defina um token secreto para validar requests do Asaas';
     document.getElementById('cfg-admin-secret').value = '';
   } catch { toast('Erro ao carregar configurações', 'error'); }
 }
