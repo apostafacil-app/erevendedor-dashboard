@@ -1267,6 +1267,11 @@ async function abrirModalCliente(id = null) {
     document.getElementById('mc-ciclo').value = '';
   }
 
+  // Limpa lista de busca Asaas de sessões anteriores
+  const subsList = document.getElementById('asaas-subs-list');
+  subsList.style.display = 'none';
+  subsList.innerHTML = '';
+
   document.getElementById('modal-cliente').classList.add('open');
 }
 
