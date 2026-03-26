@@ -432,15 +432,26 @@ tr:hover td{background:#f8fafc;}
             </div>
           </div>
 
-          <!-- Inadimplentes -->
-          <div class="chart-card" style="margin-bottom:24px">
-            <div class="chart-header">
-              <div>
-                <div class="chart-title">Inadimplentes por mês</div>
-                <div class="chart-sub">Histórico de inadimplência</div>
+          <!-- Inadimplentes + Ciclos -->
+          <div class="charts-grid" style="margin-bottom:24px">
+            <div class="chart-card">
+              <div class="chart-header">
+                <div>
+                  <div class="chart-title">Inadimplentes por mês</div>
+                  <div class="chart-sub">Histórico de inadimplência</div>
+                </div>
               </div>
+              <div class="chart-wrap"><canvas id="chart-inadimp"></canvas></div>
             </div>
-            <div class="chart-wrap"><canvas id="chart-inadimp"></canvas></div>
+            <div class="chart-card">
+              <div class="chart-header">
+                <div>
+                  <div class="chart-title">Ciclos de pagamento</div>
+                  <div class="chart-sub">Distribuição por periodicidade</div>
+                </div>
+              </div>
+              <div class="chart-wrap"><canvas id="chart-ciclos"></canvas></div>
+            </div>
           </div>
 
           <!-- Distribuição por plano -->
@@ -805,7 +816,7 @@ let ADMIN_EMAIL = '';
 let clienteEditandoId = null;
 let clienteExcluindoId = null;
 let debounceTimer = null;
-let chartNovas = null, chartInadimp = null, chartConv = null;
+let chartNovas = null, chartInadimp = null, chartConv = null, chartCiclos = null;
 
 // ─── Utilidades ────────────────────────────────────────────────────────────
 function esc(s) {
@@ -1024,26 +1035,6 @@ function renderKpis(kpis, porPlano, porCiclo) {
     </div>
   `;
 
-  // Ciclos de pagamento
-  const ciclos = porCiclo || {};
-  const ciclosOrdem = ['Mensal','Trimestral','Semestral','Anual'];
-  const totalCiclos = ciclosOrdem.reduce((s, c) => s + (ciclos[c] || 0), 0);
-  if (totalCiclos > 0) {
-    grid.innerHTML += `
-    <div class="kpi-card" style="grid-column: span 2">
-      <div class="kpi-icon purple">🔄</div>
-      <div class="kpi-body" style="flex:1">
-        <div class="kpi-label" style="margin-bottom:10px">Ciclos de pagamento</div>
-        <div style="display:flex;gap:16px;flex-wrap:wrap">
-          ${ciclosOrdem.map(c => ciclos[c] > 0 ? `
-            <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
-              <span style="font-size:20px;font-weight:800;color:var(--text)">${ciclos[c]}</span>
-              <span style="font-size:11px;color:var(--text-muted)">${c}</span>
-            </div>` : '').join('')}
-        </div>
-      </div>
-    </div>`;
-  }
 }
 
 function renderGraficos(d) {
@@ -1098,6 +1089,32 @@ function renderGraficos(d) {
         y: { beginAtZero: true, ticks: { stepSize: 1, color: tickColor, font: { size: 11 } },
           grid: { color: gridColor } },
         x: { ticks: { color: tickColor, font: { size: 11 } }, grid: { display: false } }
+      }
+    }
+  });
+
+  // Gráfico: Ciclos de pagamento (doughnut)
+  if (chartCiclos) chartCiclos.destroy();
+  const porCicloData = d.porCiclo || {};
+  const ciclosOrdem = ['Mensal','Trimestral','Semestral','Anual'];
+  const ciclosLabels = ciclosOrdem.filter(c => (porCicloData[c] || 0) > 0);
+  const ciclosVals   = ciclosLabels.map(c => porCicloData[c]);
+  chartCiclos = new Chart(document.getElementById('chart-ciclos'), {
+    type: 'doughnut',
+    data: {
+      labels: ciclosLabels,
+      datasets: [{
+        data: ciclosVals,
+        backgroundColor: ['#16a34a','#3b82f6','#8b5cf6','#f59e0b'],
+        borderWidth: 0,
+        hoverOffset: 6,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 12 }, color: tickColor, boxWidth: 12, borderRadius: 4 } }
       }
     }
   });
