@@ -772,14 +772,6 @@ tr:hover td{background:#f8fafc;}
         </div>
         <div id="asaas-subs-list" style="display:none;margin-top:8px;border:1.5px solid var(--border2);border-radius:10px;max-height:200px;overflow-y:auto;background:#fff;"></div>
       </div>
-      <div class="form-group">
-        <label>Status</label>
-        <select id="mc-status">
-          <option value="trial">Trial (sem assinatura)</option>
-          <option value="ativo">Ativo</option>
-          <option value="bloqueado">Bloqueado</option>
-        </select>
-      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="fecharModal('modal-cliente')">Cancelar</button>
@@ -1265,7 +1257,6 @@ async function abrirModalCliente(id = null) {
       document.getElementById('mc-plano').value = c.plano || '';
       document.getElementById('mc-ciclo').value = c.ciclo || '';
       document.getElementById('mc-assinaturaId').value = c.assinaturaId || '';
-      document.getElementById('mc-status').value = c.lojaBloqueada ? 'bloqueado' : (c.ativo ? 'ativo' : 'trial');
     } catch { toast('Erro ao carregar dados', 'error'); return; }
   } else {
     titulo.textContent = 'Novo cliente';
@@ -1274,7 +1265,6 @@ async function abrirModalCliente(id = null) {
     });
     document.getElementById('mc-plano').value = '';
     document.getElementById('mc-ciclo').value = '';
-    document.getElementById('mc-status').value = 'trial';
   }
 
   document.getElementById('modal-cliente').classList.add('open');
@@ -1289,8 +1279,6 @@ async function salvarCliente() {
     plano: document.getElementById('mc-plano').value || null,
     ciclo: document.getElementById('mc-ciclo').value || null,
     assinaturaId: document.getElementById('mc-assinaturaId').value.trim() || null,
-    ativo: document.getElementById('mc-status').value === 'ativo',
-    lojaBloqueada: document.getElementById('mc-status').value === 'bloqueado',
   };
 
   if (!body.nomeLoja || !body.nomeCliente || !body.email) {
