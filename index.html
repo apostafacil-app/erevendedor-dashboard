@@ -1268,7 +1268,8 @@ async function buscarAssinaturas() {
     // ID sub_xxx = busca direta na API
     const ehSubId = idDigitado.startsWith('sub_');
     const url = (idDigitado && ehSubId) ? `/asaas/subscriptions?id=${encodeURIComponent(idDigitado)}` : '/asaas/subscriptions';
-    const data = await api(url);
+    const resp = await api(url);
+    const data = await resp.json();
     const subs = data.subscriptions ?? [];
     if (!subs.length) {
       listEl.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:13px">Nenhuma assinatura encontrada.</div>';
