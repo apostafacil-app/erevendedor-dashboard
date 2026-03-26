@@ -496,6 +496,7 @@ tr:hover td{background:#f8fafc;}
                   <th>E-mail</th>
                   <th>WhatsApp</th>
                   <th>Plano</th>
+                  <th>Ciclo</th>
                   <th>Status</th>
                   <th>Assinatura</th>
                   <th>Ações</th>
@@ -1028,7 +1029,7 @@ function renderKpis(kpis, porPlano, porCiclo) {
   const ciclosOrdem = ['Mensal','Trimestral','Semestral','Anual'];
   const totalCiclos = ciclosOrdem.reduce((s, c) => s + (ciclos[c] || 0), 0);
   if (totalCiclos > 0) {
-    el.innerHTML += `
+    grid.innerHTML += `
     <div class="kpi-card" style="grid-column: span 2">
       <div class="kpi-icon purple">🔄</div>
       <div class="kpi-body" style="flex:1">
@@ -1200,6 +1201,10 @@ function renderClientes(clientes) {
       ? `<span class="badge badge-blue">${esc(c.plano)}</span>`
       : '<span class="badge badge-gray">—</span>';
 
+    const ciclo = c.ciclo
+      ? `<span class="badge badge-gray" style="font-size:10px">${esc(c.ciclo)}</span>`
+      : '<span style="color:var(--text-muted)">—</span>';
+
     const ass = c.assinaturaId
       ? `<code style="font-size:11px;color:var(--accent);background:#f0fdf4;padding:2px 6px;border-radius:5px">${esc(c.assinaturaId)}</code>`
       : '<span style="color:var(--text-muted)">—</span>';
@@ -1213,6 +1218,7 @@ function renderClientes(clientes) {
       <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;color:var(--text-dim)">${esc(c.email)}</td>
       <td style="color:var(--text-dim)">${esc(c.whatsapp) || '—'}</td>
       <td>${plano}</td>
+      <td>${ciclo}</td>
       <td>${badge}</td>
       <td>${ass}</td>
       <td>
