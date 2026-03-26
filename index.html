@@ -150,6 +150,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .kpi-icon.green{background:rgba(22,163,74,.12);color:var(--green);}
 .kpi-icon.blue{background:rgba(59,130,246,.12);color:var(--blue);}
 .kpi-icon.red{background:rgba(239,68,68,.12);color:var(--red);}
+.kpi-icon.purple{background:rgba(139,92,246,.12);color:#8b5cf6;}
 .kpi-icon.yellow{background:rgba(245,158,11,.12);color:var(--yellow);}
 .kpi-body{flex:1;min-width:0;}
 .kpi-value{font-size:30px;font-weight:800;color:var(--text);line-height:1;}
@@ -741,6 +742,16 @@ tr:hover td{background:#f8fafc;}
           <option>Avançado</option>
         </select>
       </div>
+      <div class="form-group">
+        <label>Ciclo de pagamento</label>
+        <select id="mc-ciclo">
+          <option value="">Não definido</option>
+          <option>Mensal</option>
+          <option>Trimestral</option>
+          <option>Semestral</option>
+          <option>Anual</option>
+        </select>
+      </div>
       <div class="form-group span2">
         <label>ID da assinatura Asaas</label>
         <div style="display:flex;gap:8px;align-items:center;">
@@ -1002,7 +1013,36 @@ function renderKpis(kpis, porPlano) {
         <div class="kpi-trend">Receita média por cliente</div>
       </div>
     </div>
+    <div class="kpi-card">
+      <div class="kpi-icon blue">📈</div>
+      <div class="kpi-body">
+        <div class="kpi-value">${kpis.mrr > 0 ? 'R$\u00a0' + kpis.mrr.toLocaleString('pt-BR') : '—'}</div>
+        <div class="kpi-label">MRR</div>
+        <div class="kpi-trend">Receita mensal recorrente</div>
+      </div>
+    </div>
   `;
+
+  // Ciclos de pagamento
+  const ciclos = d.porCiclo || {};
+  const ciclosOrdem = ['Mensal','Trimestral','Semestral','Anual'];
+  const totalCiclos = ciclosOrdem.reduce((s, c) => s + (ciclos[c] || 0), 0);
+  if (totalCiclos > 0) {
+    el.innerHTML += `
+    <div class="kpi-card" style="grid-column: span 2">
+      <div class="kpi-icon purple">🔄</div>
+      <div class="kpi-body" style="flex:1">
+        <div class="kpi-label" style="margin-bottom:10px">Ciclos de pagamento</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap">
+          ${ciclosOrdem.map(c => ciclos[c] > 0 ? `
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+              <span style="font-size:20px;font-weight:800;color:var(--text)">${ciclos[c]}</span>
+              <span style="font-size:11px;color:var(--text-muted)">${c}</span>
+            </div>` : '').join('')}
+        </div>
+      </div>
+    </div>`;
+  }
 }
 
 function renderGraficos(d) {
@@ -1200,6 +1240,7 @@ async function abrirModalCliente(id = null) {
       document.getElementById('mc-email').value = c.email || '';
       document.getElementById('mc-whatsapp').value = c.whatsapp || '';
       document.getElementById('mc-plano').value = c.plano || '';
+      document.getElementById('mc-ciclo').value = c.ciclo || '';
       document.getElementById('mc-assinaturaId').value = c.assinaturaId || '';
       document.getElementById('mc-status').value = c.lojaBloqueada ? 'bloqueado' : (c.ativo ? 'ativo' : 'trial');
     } catch { toast('Erro ao carregar dados', 'error'); return; }
@@ -1209,6 +1250,7 @@ async function abrirModalCliente(id = null) {
       document.getElementById(id).value = '';
     });
     document.getElementById('mc-plano').value = '';
+    document.getElementById('mc-ciclo').value = '';
     document.getElementById('mc-status').value = 'trial';
   }
 
@@ -1222,6 +1264,7 @@ async function salvarCliente() {
     email: document.getElementById('mc-email').value.trim(),
     whatsapp: document.getElementById('mc-whatsapp').value.trim(),
     plano: document.getElementById('mc-plano').value || null,
+    ciclo: document.getElementById('mc-ciclo').value || null,
     assinaturaId: document.getElementById('mc-assinaturaId').value.trim() || null,
     ativo: document.getElementById('mc-status').value === 'ativo',
     lojaBloqueada: document.getElementById('mc-status').value === 'bloqueado',
