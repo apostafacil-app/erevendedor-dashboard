@@ -1263,7 +1263,9 @@ async function buscarAssinaturas() {
   listEl.style.display = 'block';
   listEl.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:13px">Buscando assinaturas...</div>';
   try {
-    const data = await api('/asaas/subscriptions');
+    const idDigitado = document.getElementById('mc-assinaturaId').value.trim();
+    const url = idDigitado ? `/asaas/subscriptions?id=${encodeURIComponent(idDigitado)}` : '/asaas/subscriptions';
+    const data = await api(url);
     const subs = data.subscriptions ?? [];
     if (!subs.length) {
       listEl.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:13px">Nenhuma assinatura encontrada.</div>';
