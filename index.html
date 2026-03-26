@@ -1202,9 +1202,10 @@ function renderClientes(clientes) {
 
   tbody.innerHTML = clientes.map(c => {
     let badge;
-    if (c.lojaBloqueada) badge = '<span class="badge badge-red"><span class="badge-dot"></span>Bloqueada</span>';
-    else if (c.ativo && c.assinaturaId) badge = '<span class="badge badge-green"><span class="badge-dot"></span>Ativo</span>';
-    else badge = '<span class="badge badge-gray"><span class="badge-dot"></span>Trial</span>';
+    if (c.lojaBloqueada)          badge = '<span class="badge badge-red"><span class="badge-dot"></span>Bloqueada</span>';
+    else if (c.ativo)             badge = '<span class="badge badge-green"><span class="badge-dot"></span>Ativo</span>';
+    else if (c.assinaturaId)      badge = '<span class="badge badge-yellow"><span class="badge-dot"></span>Inativo</span>';
+    else                          badge = '<span class="badge badge-gray"><span class="badge-dot"></span>Trial</span>';
 
     const plano = c.plano
       ? `<span class="badge badge-blue">${esc(c.plano)}</span>`
