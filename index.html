@@ -317,7 +317,9 @@ tr:hover td{background:#f8fafc;}
   <div class="login-box">
     <div class="login-logo"><img src="erevendedor-logo.png" alt="eRevendedor"></div>
     <div class="login-sub">Painel Administrativo</div>
-    <label for="inp-senha">Senha de acesso</label>
+    <label for="inp-email">E-mail de acesso</label>
+    <input type="email" id="inp-email" placeholder="admin@exemplo.com" autocomplete="email" style="margin-bottom:12px">
+    <label for="inp-senha">Código de acesso</label>
     <input type="password" id="inp-senha" placeholder="••••••••" autocomplete="current-password">
     <div id="login-error" class="login-error"></div>
     <button id="btn-login" onclick="fazerLogin()">Entrar</button>
@@ -687,7 +689,11 @@ tr:hover td{background:#f8fafc;}
           </div>
           <div class="config-grid">
             <div class="form-group">
-              <label>Nova senha do painel</label>
+              <label>E-mail de acesso ao painel</label>
+              <input type="email" id="cfg-admin-email" placeholder="admin@exemplo.com">
+            </div>
+            <div class="form-group">
+              <label>Novo código de acesso</label>
               <div class="pw-wrap">
                 <input type="password" id="cfg-admin-secret" placeholder="Deixe em branco para manter">
                 <button class="pw-toggle" onclick="togglePw('cfg-admin-secret', this)">👁</button>
@@ -783,6 +789,7 @@ const BACKEND = 'https://us-central1-erevendedor-dashboard.cloudfunctions.net/ap
 
 // ─── Estado ────────────────────────────────────────────────────────────────
 let TOKEN = '';
+let ADMIN_EMAIL = '';
 let clienteEditandoId = null;
 let clienteExcluindoId = null;
 let debounceTimer = null;
@@ -799,6 +806,7 @@ function esc(s) {
 async function api(path, opts = {}) {
   const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
   if (TOKEN) headers['Authorization'] = 'Bearer ' + TOKEN;
+  if (ADMIN_EMAIL) headers['X-Admin-Email'] = ADMIN_EMAIL;
   const r = await fetch(BACKEND + path, { ...opts, headers });
   return r;
 }
@@ -838,33 +846,43 @@ function closeSidebar() {
 document.getElementById('inp-senha').addEventListener('keydown', e => {
   if (e.key === 'Enter') fazerLogin();
 });
+document.getElementById('inp-email').addEventListener('keydown', e => {
+  if (e.key === 'Enter') fazerLogin();
+});
 
 async function fazerLogin() {
+  const email = document.getElementById('inp-email').value.trim().toLowerCase();
   const senha = document.getElementById('inp-senha').value.trim();
   const errEl = document.getElementById('login-error');
   const btn = document.getElementById('btn-login');
 
-  if (!senha) { errEl.textContent = 'Digite a senha.'; return; }
+  if (!email) { errEl.textContent = 'Digite o e-mail.'; return; }
+  if (!senha) { errEl.textContent = 'Digite o código de acesso.'; return; }
   errEl.textContent = '';
   btn.textContent = 'Entrando…';
   btn.disabled = true;
 
   try {
     TOKEN = senha;
+    ADMIN_EMAIL = email;
     const r = await api('/dashboard/metricas');
     if (r.status === 401) {
-      errEl.textContent = 'Senha incorreta.';
-      TOKEN = '';
+      errEl.textContent = 'E-mail ou código de acesso incorreto.';
+      TOKEN = ''; ADMIN_EMAIL = '';
+    } else if (r.status === 429) {
+      errEl.textContent = 'Muitas tentativas. Aguarde 15 minutos.';
+      TOKEN = ''; ADMIN_EMAIL = '';
     } else if (!r.ok) {
       errEl.textContent = 'Erro no servidor. Tente novamente.';
-      TOKEN = '';
+      TOKEN = ''; ADMIN_EMAIL = '';
     } else {
       sessionStorage.setItem('erev_token', senha);
+      sessionStorage.setItem('erev_email', email);
       mostrarApp();
     }
   } catch (e) {
     errEl.textContent = 'Erro de conexão com o servidor.';
-    TOKEN = '';
+    TOKEN = ''; ADMIN_EMAIL = '';
   }
 
   btn.textContent = 'Entrar';
@@ -880,15 +898,18 @@ function mostrarApp() {
 
 function sair() {
   sessionStorage.removeItem('erev_token');
-  TOKEN = '';
+  sessionStorage.removeItem('erev_email');
+  TOKEN = ''; ADMIN_EMAIL = '';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app').classList.remove('visible');
+  document.getElementById('inp-email').value = '';
   document.getElementById('inp-senha').value = '';
 }
 
 window.addEventListener('DOMContentLoaded', () => {
   const saved = sessionStorage.getItem('erev_token');
-  if (saved) { TOKEN = saved; mostrarApp(); }
+  const savedEmail = sessionStorage.getItem('erev_email');
+  if (saved && savedEmail) { TOKEN = saved; ADMIN_EMAIL = savedEmail; mostrarApp(); }
 });
 
 // ─── Tabs / navegação sidebar ───────────────────────────────────────────────
@@ -1380,6 +1401,7 @@ async function carregarConfiguracoes() {
     elWebhookToken.value = '';
     elWebhookToken.placeholder = c.asaasWebhookTokenDefinido ? 'Token definido — deixe em branco para manter' : 'Defina um token secreto para validar requests do Asaas';
     document.getElementById('cfg-admin-secret').value = '';
+    document.getElementById('cfg-admin-email').value = c.adminEmail || '';
   } catch { toast('Erro ao carregar configurações', 'error'); }
 }
 
@@ -1432,6 +1454,8 @@ async function salvarConfiguracoes() {
 
   const novoSecret = document.getElementById('cfg-admin-secret').value.trim();
   if (novoSecret) body.adminSecret = novoSecret;
+  const adminEmail = document.getElementById('cfg-admin-email').value.trim().toLowerCase();
+  if (adminEmail) body.adminEmail = adminEmail;
 
   try {
     const r = await api('/configuracoes', { method: 'PUT', body: JSON.stringify(body) });
