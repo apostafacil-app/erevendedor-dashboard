@@ -957,7 +957,7 @@ async function carregarDashboard() {
     if (!r.ok) throw new Error();
     const d = await r.json();
 
-    renderKpis(d.kpis, d.porPlano);
+    renderKpis(d.kpis, d.porPlano, d.porCiclo || {});
     renderGraficos(d);
     renderPlanos(d.porPlano, d.kpis.total);
 
@@ -968,7 +968,7 @@ async function carregarDashboard() {
   }
 }
 
-function renderKpis(kpis, porPlano) {
+function renderKpis(kpis, porPlano, porCiclo) {
   const grid = document.getElementById('kpi-grid');
   const taxa = kpis.taxaConversao;
 
@@ -1024,7 +1024,7 @@ function renderKpis(kpis, porPlano) {
   `;
 
   // Ciclos de pagamento
-  const ciclos = d.porCiclo || {};
+  const ciclos = porCiclo || {};
   const ciclosOrdem = ['Mensal','Trimestral','Semestral','Anual'];
   const totalCiclos = ciclosOrdem.reduce((s, c) => s + (ciclos[c] || 0), 0);
   if (totalCiclos > 0) {
