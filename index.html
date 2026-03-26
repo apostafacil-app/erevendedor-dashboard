@@ -1339,15 +1339,13 @@ async function buscarAssinaturas() {
   listEl.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:13px">Buscando assinaturas...</div>';
   try {
     const idDigitado = document.getElementById('mc-assinaturaId').value.trim();
-    // ID numérico (ex: 998487) = Asaas não suporta busca por esse formato → lista todas
-    // ID sub_xxx = busca direta na API
-    const ehSubId = idDigitado.startsWith('sub_');
-    const url = (idDigitado && ehSubId) ? `/asaas/subscriptions?id=${encodeURIComponent(idDigitado)}` : '/asaas/subscriptions';
+    // Qualquer ID informado → busca direto; campo vazio → lista todas
+    const url = idDigitado ? `/asaas/subscriptions?id=${encodeURIComponent(idDigitado)}` : '/asaas/subscriptions';
     const resp = await api(url);
     const data = await resp.json();
     const subs = data.subscriptions ?? [];
     if (!subs.length) {
-      listEl.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:13px">Nenhuma assinatura encontrada.</div>';
+      listEl.innerHTML = `<div style="padding:12px;color:var(--text-muted);font-size:13px">${idDigitado ? 'ID não encontrado no Asaas.' : 'Nenhuma assinatura encontrada.'}</div>`;
       return;
     }
     listEl.innerHTML = subs.map(s => `
