@@ -1201,12 +1201,14 @@ function renderClientes(clientes) {
   }
 
   tbody.innerHTML = clientes.map(c => {
+    // statusLead é fonte principal, mas sem assinaturaId nunca pode ser "cliente"
     const sl = c.statusLead ?? (c.assinaturaId ? 'cliente' : 'trial');
+    const statusEfetivo = (!c.assinaturaId && sl === 'cliente') ? 'trial' : sl;
     let badge;
-    if (c.lojaBloqueada)      badge = '<span class="badge badge-red"><span class="badge-dot"></span>Bloqueada</span>';
-    else if (sl === 'cliente') badge = '<span class="badge badge-green"><span class="badge-dot"></span>Cliente</span>';
-    else if (sl === 'inativo') badge = '<span class="badge badge-yellow"><span class="badge-dot"></span>Inativo</span>';
-    else                       badge = '<span class="badge badge-gray"><span class="badge-dot"></span>Trial</span>';
+    if (c.lojaBloqueada)                 badge = '<span class="badge badge-red"><span class="badge-dot"></span>Bloqueada</span>';
+    else if (statusEfetivo === 'cliente') badge = '<span class="badge badge-green"><span class="badge-dot"></span>Cliente</span>';
+    else if (statusEfetivo === 'inativo') badge = '<span class="badge badge-yellow"><span class="badge-dot"></span>Inativo</span>';
+    else                                  badge = '<span class="badge badge-gray"><span class="badge-dot"></span>Trial</span>';
 
     const plano = c.plano
       ? `<span class="badge badge-blue">${esc(c.plano)}</span>`
