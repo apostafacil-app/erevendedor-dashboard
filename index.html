@@ -1590,7 +1590,7 @@ async function alterarStatusLead(id, novoStatus) {
     } else {
       toast(novoStatus === 'inativo' ? 'Lead inativado e loja bloqueada' : 'Lead reativado como Trial e loja desbloqueada');
     }
-    carregarClientes();
+    filtrarClientes();
   } catch (e) {
     toast('Erro ao alterar status: ' + e, 'error');
   }
