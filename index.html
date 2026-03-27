@@ -1223,9 +1223,9 @@ function renderClientes(clientes) {
     const toggleLabel = c.lojaBloqueada ? 'Desbloquear' : 'Bloquear';
     const toggleClass = c.lojaBloqueada ? 'btn-primary' : 'btn-outline';
     const leadBtn = sl === 'trial'
-      ? `<button class="btn btn-outline btn-sm" style="color:var(--yellow,#d97706);border-color:var(--yellow,#d97706)" onclick="alterarStatusLead('${esc(c.id)}','inativo')">Inativar</button>`
+      ? `<button class="btn btn-outline btn-sm" style="color:var(--yellow,#d97706);border-color:var(--yellow,#d97706)" onclick="alterarStatusLead('${esc(c.email)}','inativo')">Inativar</button>`
       : sl === 'inativo'
-      ? `<button class="btn btn-outline btn-sm" onclick="alterarStatusLead('${esc(c.id)}','trial')">Reativar</button>`
+      ? `<button class="btn btn-outline btn-sm" onclick="alterarStatusLead('${esc(c.email)}','trial')">Reativar</button>`
       : '';
 
     return `<tr>
@@ -1385,11 +1385,11 @@ function selecionarAssinatura(id) {
   listEl.innerHTML = '';
 }
 
-async function alterarStatusLead(id, novoStatus) {
+async function alterarStatusLead(email, novoStatus) {
   try {
-    const r = await api('/clientes/' + id + '/status', {
-      method: 'PATCH',
-      body: JSON.stringify({ status: novoStatus }),
+    const r = await api('/clientes/alterar-status', {
+      method: 'POST',
+      body: JSON.stringify({ email, status: novoStatus }),
     });
     const data = await r.json();
     if (!r.ok) { toast(data.erro || 'Erro ao alterar status', 'error'); return; }
