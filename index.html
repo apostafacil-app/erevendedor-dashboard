@@ -842,39 +842,6 @@ tr:hover td{background:#f8fafc;}
 </div>
 
 <!-- ══ TOAST ══════════════════════════════════════════════════════════════ -->
-<!-- Modal testar follow-up -->
-<div class="modal-overlay" id="modal-followup-teste">
-  <div class="modal" style="max-width:440px">
-    <div class="modal-title">🧪 Testar follow-up de trial</div>
-    <p style="color:var(--text-dim);font-size:13px;margin-bottom:16px">Cliente: <strong id="followup-nome"></strong></p>
-
-    <div class="form-group" style="margin-bottom:16px">
-      <label>Simular início do trial (dias atrás)</label>
-      <div style="display:flex;gap:8px">
-        <input type="number" id="followup-dias-atras" min="0" max="365" placeholder="Ex: 3" style="flex:1;padding:10px 12px;border:1.5px solid var(--border2);border-radius:8px;font-size:14px">
-        <button class="btn btn-outline" onclick="simularTrialInicio()" style="white-space:nowrap">Definir data</button>
-      </div>
-      <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Define o trialInicio como X dias atrás para simular em qual dia do trial o cliente está</div>
-    </div>
-
-    <div class="form-group" style="margin-bottom:16px">
-      <label>Notificação a enviar</label>
-      <select id="followup-tipo">
-        <option value="trial_followup_1">Follow up 1 (dia 3)</option>
-        <option value="trial_followup_2">Follow up 2 (dia 7)</option>
-        <option value="trial_followup_3">Follow up 3 (dia 15)</option>
-        <option value="trial_followup_4">Follow up 4 (dia 25)</option>
-        <option value="trial_encerramento">Encerramento do trial</option>
-      </select>
-    </div>
-
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="fecharModal('modal-followup-teste')">Cancelar</button>
-      <button class="btn btn-primary" onclick="enviarFollowupTeste()">Enviar agora</button>
-    </div>
-  </div>
-</div>
-
 <div id="toast"></div>
 
 <script>
@@ -1332,7 +1299,6 @@ function renderClientes(clientes) {
             <div class="dditem" onclick="closeAllDropdowns();abrirModalCliente('${esc(c.id)}')">✏️ Editar</div>
             ${leadItem}
             ${c.assinaturaId ? `<div class="dditem" onclick="closeAllDropdowns();toggleLoja('${esc(c.id)}','${esc(c.nomeLoja)}',${c.lojaBloqueada})">${c.lojaBloqueada ? '🔓 Desbloquear' : '🔒 Bloquear'}</div>` : ''}
-            ${c.periodoTrial ? `<div class="dditem" onclick="closeAllDropdowns();abrirTestarFollowup('${esc(c.id)}','${esc(c.nomeLoja)}')">🧪 Testar follow-up</div>` : ''}
             <div class="dditem dditem-danger" onclick="closeAllDropdowns();abrirExcluir('${esc(c.id)}','${esc(c.nomeLoja)}')">🗑️ Excluir</div>
           </div>
         </div>
@@ -1513,41 +1479,6 @@ function selecionarAssinatura(id) {
   listEl.innerHTML = '';
 }
 
-let followupTesteClienteId = null;
-
-function abrirTestarFollowup(id, nome) {
-  followupTesteClienteId = id;
-  document.getElementById('followup-nome').textContent = nome;
-  document.getElementById('followup-dias-atras').value = '';
-  document.getElementById('followup-tipo').value = 'trial_followup_1';
-  document.getElementById('modal-followup-teste').classList.add('open');
-}
-
-async function simularTrialInicio() {
-  const dias = parseInt(document.getElementById('followup-dias-atras').value);
-  if (!dias && dias !== 0) { toast('Informe quantos dias atrás', 'error'); return; }
-  try {
-    const r = await api(`/clientes/${followupTesteClienteId}/simular-trial`, {
-      method: 'POST', body: JSON.stringify({ diasAtras: dias })
-    });
-    const d = await r.json();
-    if (!r.ok) { toast(d.erro || 'Erro', 'error'); return; }
-    toast(`✅ Trial iniciado há ${dias} dias`);
-  } catch { toast('Erro de conexão', 'error'); }
-}
-
-async function enviarFollowupTeste() {
-  const tipo = document.getElementById('followup-tipo').value;
-  try {
-    const r = await api(`/clientes/${followupTesteClienteId}/testar-followup`, {
-      method: 'POST', body: JSON.stringify({ tipo })
-    });
-    const d = await r.json();
-    if (!r.ok) { toast(d.erro || 'Erro', 'error'); return; }
-    toast(d.ok ? `✅ ${d.mensagem}` : `⚠️ ${d.mensagem}`, d.ok ? 'success' : 'error');
-    fecharModal('modal-followup-teste');
-  } catch { toast('Erro de conexão', 'error'); }
-}
 
 function togglePeriodoCustom() {
   const sel = document.getElementById('mc-periodoTrial').value;
