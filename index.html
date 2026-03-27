@@ -424,8 +424,8 @@ tr:hover td{background:#f8fafc;}
             <div class="chart-card">
               <div class="chart-header">
                 <div>
-                  <div class="chart-title">Taxa de conversão</div>
-                  <div class="chart-sub">Trial → pago</div>
+                  <div class="chart-title">Distribuição de leads</div>
+                  <div class="chart-sub">Clientes · Trial · Inativo</div>
                 </div>
               </div>
               <div class="chart-wrap"><canvas id="chart-conv"></canvas></div>
@@ -963,7 +963,7 @@ async function carregarDashboard() {
 
     renderKpis(d.kpis, d.porPlano, d.porCiclo || {});
     renderGraficos(d);
-    renderPlanos(d.porPlano, d.kpis.total);
+    renderPlanos(d.porPlano, d.kpis.comAssinatura);
 
     document.getElementById('dashboard-loading').style.display = 'none';
     document.getElementById('dashboard-content').style.display = 'block';
@@ -982,7 +982,8 @@ function renderKpis(kpis, porPlano, porCiclo) {
       <div class="kpi-body">
         <div class="kpi-value">${kpis.total}</div>
         <div class="kpi-label">Total de lojas</div>
-        <div class="kpi-trend">Trial: ${kpis.trial} · Inativo: ${kpis.inativos ?? 0} · Clientes: ${kpis.comAssinatura}</div>
+        <div class="kpi-trend">Clientes: ${kpis.comAssinatura}</div>
+        <div class="kpi-trend">Trial: ${kpis.trial} · Inativo: ${kpis.inativos ?? 0}</div>
       </div>
     </div>
     <div class="kpi-card">
