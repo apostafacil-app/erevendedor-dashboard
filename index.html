@@ -520,6 +520,7 @@ tr:hover td{background:#f8fafc;}
                   <th>WhatsApp</th>
                   <th>Plano</th>
                   <th>Ciclo</th>
+                  <th>Trial</th>
                   <th>Status</th>
                   <th>Assinatura</th>
                   <th>Ações</th>
@@ -622,6 +623,27 @@ tr:hover td{background:#f8fafc;}
           </div>
           <p style="margin-top:14px;font-size:12px;color:var(--text-muted);background:#f8fafc;border-radius:8px;padding:12px">
             Será enviado um POST com: <code>nome_notificacao</code>, <code>nome_cliente</code>, <code>nome_loja</code>, <code>email</code>, <code>whatsapp</code>, <code>link_fatura</code>, <code>vencimento</code>, <code>valor</code>.
+          </p>
+        </div>
+
+        <!-- Follow-up Trial -->
+        <div class="config-card">
+          <div class="config-card-header">
+            <div class="config-card-icon green">🧪</div>
+            <div>
+              <div class="config-card-title">Follow-up de Trial</div>
+              <div class="config-card-sub">URL que receberá os POSTs das notificações de trial</div>
+            </div>
+          </div>
+          <div class="config-grid">
+            <div class="form-group span2" style="grid-column:span 2">
+              <label>URL do endpoint (POST)</label>
+              <input type="url" id="cfg-trial-followup-url" placeholder="https://...">
+            </div>
+          </div>
+          <p style="margin-top:14px;font-size:12px;color:var(--text-muted);background:#f8fafc;border-radius:8px;padding:12px">
+            Será enviado um POST com: <code>nome_notificacao</code>, <code>dias_no_trial</code>, <code>nome_cliente</code>, <code>nome_loja</code>, <code>email</code>, <code>whatsapp</code>, <code>plano</code>, <code>periodo_trial</code>.<br><br>
+            <strong>Notificações enviadas:</strong> Follow up 1 (dia 3) · Follow up 2 (dia 7) · Follow up 3 (dia 15) · Follow up 4 (dia 25) · Encerramento (último dia do trial). Se o encerramento coincidir com um follow-up, apenas o encerramento é enviado.
           </p>
         </div>
 
@@ -775,6 +797,18 @@ tr:hover td{background:#f8fafc;}
           <option>Semestral</option>
           <option>Anual</option>
         </select>
+      </div>
+      <div class="form-group">
+        <label>Período de trial (dias)</label>
+        <select id="mc-periodoTrial" onchange="togglePeriodoCustom()">
+          <option value="">Não definido</option>
+          <option value="7">7 dias</option>
+          <option value="15">15 dias</option>
+          <option value="30">30 dias</option>
+          <option value="outro">Outro...</option>
+        </select>
+        <input type="number" id="mc-periodoTrialCustom" placeholder="Ex: 21" min="1" max="365"
+          style="display:none;margin-top:6px;width:100%;padding:10px 12px;border:1.5px solid var(--border2);border-radius:8px;font-size:14px">
       </div>
       <div class="form-group span2">
         <label>ID da assinatura Asaas</label>
@@ -1230,6 +1264,10 @@ function renderClientes(clientes) {
       ? `<span class="badge badge-gray" style="font-size:10px">${esc(c.ciclo)}</span>`
       : '<span style="color:var(--text-muted)">—</span>';
 
+    const trial = c.periodoTrial
+      ? `<span class="badge badge-gray" style="font-size:10px">${c.periodoTrial}d</span>`
+      : '<span style="color:var(--text-muted)">—</span>';
+
     const ass = c.assinaturaId
       ? `<code style="font-size:11px;color:var(--accent);background:#f0fdf4;padding:2px 6px;border-radius:5px">${esc(c.assinaturaId)}</code>`
       : '<span style="color:var(--text-muted)">—</span>';
@@ -1248,6 +1286,7 @@ function renderClientes(clientes) {
       <td style="color:var(--text-dim)">${esc(c.whatsapp) || '—'}</td>
       <td>${plano}</td>
       <td>${ciclo}</td>
+      <td>${trial}</td>
       <td>${badge}</td>
       <td>${ass}</td>
       <td>
@@ -1281,6 +1320,12 @@ async function abrirModalCliente(id = null) {
       document.getElementById('mc-plano').value = c.plano || '';
       document.getElementById('mc-ciclo').value = c.ciclo || '';
       document.getElementById('mc-assinaturaId').value = c.assinaturaId || '';
+      // Período de trial
+      const ptSel = document.getElementById('mc-periodoTrial');
+      const ptCustom = document.getElementById('mc-periodoTrialCustom');
+      if (!c.periodoTrial) { ptSel.value = ''; ptCustom.style.display='none'; }
+      else if ([7,15,30].includes(c.periodoTrial)) { ptSel.value = String(c.periodoTrial); ptCustom.style.display='none'; }
+      else { ptSel.value = 'outro'; ptCustom.style.display='block'; ptCustom.value = c.periodoTrial; }
     } catch { toast('Erro ao carregar dados', 'error'); return; }
   } else {
     titulo.textContent = 'Novo cliente';
@@ -1289,6 +1334,9 @@ async function abrirModalCliente(id = null) {
     });
     document.getElementById('mc-plano').value = '';
     document.getElementById('mc-ciclo').value = '';
+    document.getElementById('mc-periodoTrial').value = '';
+    document.getElementById('mc-periodoTrialCustom').style.display = 'none';
+    document.getElementById('mc-periodoTrialCustom').value = '';
   }
 
   // Limpa lista de busca Asaas de sessões anteriores
@@ -1308,6 +1356,12 @@ async function salvarCliente() {
     plano: document.getElementById('mc-plano').value || null,
     ciclo: document.getElementById('mc-ciclo').value || null,
     assinaturaId: document.getElementById('mc-assinaturaId').value.trim() || null,
+    periodoTrial: (() => {
+      const sel = document.getElementById('mc-periodoTrial').value;
+      if (!sel) return null;
+      if (sel === 'outro') return Number(document.getElementById('mc-periodoTrialCustom').value) || null;
+      return Number(sel);
+    })(),
   };
 
   if (!body.nomeLoja || !body.nomeCliente || !body.email) {
@@ -1422,6 +1476,13 @@ function selecionarAssinatura(id) {
   listEl.innerHTML = '';
 }
 
+function togglePeriodoCustom() {
+  const sel = document.getElementById('mc-periodoTrial').value;
+  const custom = document.getElementById('mc-periodoTrialCustom');
+  custom.style.display = sel === 'outro' ? 'block' : 'none';
+  if (sel !== 'outro') custom.value = '';
+}
+
 function toggleDropdown(e, id) {
   e.stopPropagation();
   const menu = document.getElementById(id);
@@ -1510,6 +1571,7 @@ async function carregarConfiguracoes() {
     document.getElementById('cfg-notif3').value = c.diasNotif3Apos ?? 3;
     document.getElementById('cfg-notif4').value = c.diasNotif4Apos ?? 7;
     document.getElementById('cfg-webhook').value = c.webhookNotificacaoUrl || '';
+    document.getElementById('cfg-trial-followup-url').value = c.urlNotifTrialFollowUp || '';
     document.getElementById('cfg-url-ativar').value = c.urlAtivarLoja || '';
     document.getElementById('cfg-url-desativar').value = c.urlDesativarLoja || '';
     const elTokenLoja = document.getElementById('cfg-token-loja');
@@ -1572,6 +1634,7 @@ async function salvarConfiguracoes() {
     diasNotif3Apos: parseInt(document.getElementById('cfg-notif3').value),
     diasNotif4Apos: parseInt(document.getElementById('cfg-notif4').value),
     webhookNotificacaoUrl: document.getElementById('cfg-webhook').value.trim(),
+    urlNotifTrialFollowUp: document.getElementById('cfg-trial-followup-url').value.trim(),
     urlAtivarLoja: document.getElementById('cfg-url-ativar').value.trim(),
     urlDesativarLoja: document.getElementById('cfg-url-desativar').value.trim(),
     tokenLoja: document.getElementById('cfg-token-loja').value,
