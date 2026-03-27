@@ -767,7 +767,7 @@ tr:hover td{background:#f8fafc;}
       <div class="form-group span2">
         <label>ID da assinatura Asaas</label>
         <div style="display:flex;gap:8px;align-items:center;">
-          <input type="text" id="mc-assinaturaId" placeholder="sub_xxxxxxxxxxxx" style="flex:1">
+          <input type="text" id="mc-assinaturaId" placeholder="sub_xxxxxxxxxxxx" style="flex:1" autocomplete="off" spellcheck="false">
           <button type="button" class="btn btn-outline" style="white-space:nowrap;padding:10px 14px;font-size:12px" onclick="buscarAssinaturas()">🔍 Buscar no Asaas</button>
         </div>
         <div id="asaas-subs-list" style="display:none;margin-top:8px;border:1.5px solid var(--border2);border-radius:10px;max-height:200px;overflow-y:auto;background:#fff;"></div>
@@ -1201,11 +1201,12 @@ function renderClientes(clientes) {
   }
 
   tbody.innerHTML = clientes.map(c => {
+    const sl = c.statusLead ?? (c.assinaturaId ? 'cliente' : 'trial');
     let badge;
-    if (c.lojaBloqueada)          badge = '<span class="badge badge-red"><span class="badge-dot"></span>Bloqueada</span>';
-    else if (c.ativo)             badge = '<span class="badge badge-green"><span class="badge-dot"></span>Ativo</span>';
-    else if (c.assinaturaId)      badge = '<span class="badge badge-yellow"><span class="badge-dot"></span>Inativo</span>';
-    else                          badge = '<span class="badge badge-gray"><span class="badge-dot"></span>Trial</span>';
+    if (c.lojaBloqueada)      badge = '<span class="badge badge-red"><span class="badge-dot"></span>Bloqueada</span>';
+    else if (sl === 'cliente') badge = '<span class="badge badge-green"><span class="badge-dot"></span>Cliente</span>';
+    else if (sl === 'inativo') badge = '<span class="badge badge-yellow"><span class="badge-dot"></span>Inativo</span>';
+    else                       badge = '<span class="badge badge-gray"><span class="badge-dot"></span>Trial</span>';
 
     const plano = c.plano
       ? `<span class="badge badge-blue">${esc(c.plano)}</span>`
@@ -1221,6 +1222,11 @@ function renderClientes(clientes) {
 
     const toggleLabel = c.lojaBloqueada ? 'Desbloquear' : 'Bloquear';
     const toggleClass = c.lojaBloqueada ? 'btn-primary' : 'btn-outline';
+    const leadBtn = sl === 'trial'
+      ? `<button class="btn btn-outline btn-sm" style="color:var(--yellow,#d97706);border-color:var(--yellow,#d97706)" onclick="alterarStatusLead('${esc(c.id)}','inativo')">Inativar</button>`
+      : sl === 'inativo'
+      ? `<button class="btn btn-outline btn-sm" onclick="alterarStatusLead('${esc(c.id)}','trial')">Reativar</button>`
+      : '';
 
     return `<tr>
       <td><strong style="color:var(--text)">${esc(c.nomeLoja)}</strong></td>
@@ -1234,6 +1240,7 @@ function renderClientes(clientes) {
       <td>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
           <button class="btn btn-outline btn-sm" onclick="abrirModalCliente('${esc(c.id)}')">Editar</button>
+          ${leadBtn}
           <button class="btn ${toggleClass} btn-sm" onclick="toggleLoja('${esc(c.id)}','${esc(c.nomeLoja)}',${c.lojaBloqueada})">${toggleLabel}</button>
           <button class="btn btn-danger btn-sm" onclick="abrirExcluir('${esc(c.id)}','${esc(c.nomeLoja)}')">Excluir</button>
         </div>
@@ -1376,6 +1383,21 @@ function selecionarAssinatura(id) {
   const listEl = document.getElementById('asaas-subs-list');
   listEl.style.display = 'none';
   listEl.innerHTML = '';
+}
+
+async function alterarStatusLead(id, novoStatus) {
+  try {
+    const r = await api('/clientes/' + id + '/status', {
+      method: 'PATCH',
+      body: JSON.stringify({ status: novoStatus }),
+    });
+    const data = await r.json();
+    if (!r.ok) { toast(data.erro || 'Erro ao alterar status', 'error'); return; }
+    toast(novoStatus === 'inativo' ? 'Lead marcado como inativo' : 'Lead reativado como trial');
+    carregarClientes();
+  } catch {
+    toast('Erro ao alterar status', 'error');
+  }
 }
 
 document.querySelectorAll('.modal-overlay').forEach(el => {
