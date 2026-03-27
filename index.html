@@ -1141,7 +1141,6 @@ function renderPlanos(porPlano, total) {
     { nome: 'Essencial', emoji: '🌱' },
     { nome: 'Controle', emoji: '⚙️' },
     { nome: 'Avançado', emoji: '🚀' },
-    { nome: 'Sem plano', emoji: '🔖' },
   ];
   document.getElementById('planos-grid').innerHTML = planos.map(p => {
     const n = porPlano[p.nome] || 0;
