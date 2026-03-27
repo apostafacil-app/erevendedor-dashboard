@@ -1569,18 +1569,27 @@ function closeAllDropdowns() {
 document.addEventListener('click', closeAllDropdowns);
 
 async function alterarStatusLead(id, novoStatus) {
-  // Usa o endpoint protegido PUT /clientes/:id — mais confiável que o endpoint público
-  const campos = novoStatus === 'inativo'
-    ? { statusLead: 'inativo', lojaBloqueada: true, ativo: false }
-    : { statusLead: 'trial', lojaBloqueada: false };
   try {
-    const r = await api(`/clientes/${id}`, {
+    // 1. Atualiza statusLead no Firestore
+    const r1 = await api(`/clientes/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(campos),
+      body: JSON.stringify({ statusLead: novoStatus }),
     });
-    const data = await r.json();
-    if (!r.ok) { toast(data.erro || 'Erro ao alterar status', 'error'); return; }
-    toast(novoStatus === 'inativo' ? 'Lead marcado como inativo' : 'Lead reativado como trial');
+    const d1 = await r1.json();
+    if (!r1.ok) { toast(d1.erro || 'Erro ao alterar status', 'error'); return; }
+
+    // 2. Chama API externa para ativar/desativar loja no eRevendedor
+    const acao = novoStatus === 'trial' ? 'ativar' : 'desativar';
+    const r2 = await api(`/clientes/${id}/toggle`, {
+      method: 'POST',
+      body: JSON.stringify({ acao }),
+    });
+    const d2 = await r2.json();
+    if (!r2.ok) {
+      toast(`Status atualizado, mas falha ao ${acao} loja: ${d2.erro || ''}`, 'error');
+    } else {
+      toast(novoStatus === 'inativo' ? 'Lead inativado e loja bloqueada' : 'Lead reativado como Trial e loja desbloqueada');
+    }
     carregarClientes();
   } catch (e) {
     toast('Erro ao alterar status: ' + e, 'error');
