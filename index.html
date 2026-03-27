@@ -1283,11 +1283,13 @@ function renderClientes(clientes) {
     // statusLead é fonte principal, mas sem assinaturaId nunca pode ser "cliente"
     const sl = c.statusLead ?? (c.assinaturaId ? 'cliente' : 'trial');
     const statusEfetivo = (!c.assinaturaId && sl === 'cliente') ? 'trial' : sl;
+    // Clientes com assinaturaId: Ativo / Bloqueado
+    // Leads sem assinaturaId: Trial / Inativo (sempre bloqueados)
     let badge;
-    if (c.lojaBloqueada)                 badge = '<span class="badge badge-red"><span class="badge-dot"></span>Bloqueada</span>';
-    else if (statusEfetivo === 'cliente') badge = '<span class="badge badge-green"><span class="badge-dot"></span>Cliente</span>';
-    else if (statusEfetivo === 'inativo') badge = '<span class="badge badge-yellow"><span class="badge-dot"></span>Inativo</span>';
-    else                                  badge = '<span class="badge badge-gray"><span class="badge-dot"></span>Trial</span>';
+    if (statusEfetivo === 'inativo')                       badge = '<span class="badge badge-yellow"><span class="badge-dot"></span>Inativo</span>';
+    else if (c.assinaturaId && c.lojaBloqueada)            badge = '<span class="badge badge-red"><span class="badge-dot"></span>Bloqueada</span>';
+    else if (statusEfetivo === 'cliente')                  badge = '<span class="badge badge-green"><span class="badge-dot"></span>Cliente</span>';
+    else                                                   badge = '<span class="badge badge-gray"><span class="badge-dot"></span>Trial</span>';
 
     const plano = c.plano
       ? `<span class="badge badge-blue">${esc(c.plano)}</span>`
@@ -1307,9 +1309,9 @@ function renderClientes(clientes) {
 
     const toggleLabel = c.lojaBloqueada ? 'Desbloquear' : 'Bloquear';
     // Reativar só aparece se inativo E loja não bloqueada (bloqueada = desbloquear primeiro)
-    const leadItem = !c.lojaBloqueada && statusEfetivo === 'trial'
+    const leadItem = statusEfetivo === 'trial'
       ? `<div class="dditem dditem-warn" onclick="closeAllDropdowns();alterarStatusLead('${esc(c.email)}','inativo')">Inativar lead</div>`
-      : !c.lojaBloqueada && statusEfetivo === 'inativo'
+      : statusEfetivo === 'inativo'
       ? `<div class="dditem" onclick="closeAllDropdowns();alterarStatusLead('${esc(c.email)}','trial')">Reativar como Trial</div>`
       : '';
 
@@ -1329,7 +1331,7 @@ function renderClientes(clientes) {
           <div class="dd-menu" id="dd-${esc(c.id)}">
             <div class="dditem" onclick="closeAllDropdowns();abrirModalCliente('${esc(c.id)}')">✏️ Editar</div>
             ${leadItem}
-            <div class="dditem" onclick="closeAllDropdowns();toggleLoja('${esc(c.id)}','${esc(c.nomeLoja)}',${c.lojaBloqueada})">${c.lojaBloqueada ? '🔓 Desbloquear' : '🔒 Bloquear'}</div>
+            ${c.assinaturaId ? `<div class="dditem" onclick="closeAllDropdowns();toggleLoja('${esc(c.id)}','${esc(c.nomeLoja)}',${c.lojaBloqueada})">${c.lojaBloqueada ? '🔓 Desbloquear' : '🔒 Bloquear'}</div>` : ''}
             ${c.periodoTrial ? `<div class="dditem" onclick="closeAllDropdowns();abrirTestarFollowup('${esc(c.id)}','${esc(c.nomeLoja)}')">🧪 Testar follow-up</div>` : ''}
             <div class="dditem dditem-danger" onclick="closeAllDropdowns();abrirExcluir('${esc(c.id)}','${esc(c.nomeLoja)}')">🗑️ Excluir</div>
           </div>
