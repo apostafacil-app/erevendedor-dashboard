@@ -1310,9 +1310,9 @@ function renderClientes(clientes) {
     const toggleLabel = c.lojaBloqueada ? 'Desbloquear' : 'Bloquear';
     // Reativar só aparece se inativo E loja não bloqueada (bloqueada = desbloquear primeiro)
     const leadItem = statusEfetivo === 'trial'
-      ? `<div class="dditem dditem-warn" onclick="closeAllDropdowns();alterarStatusLead('${esc(c.email)}','inativo')">Inativar lead</div>`
+      ? `<div class="dditem dditem-warn" onclick="closeAllDropdowns();alterarStatusLead('${esc(c.id)}','inativo')">Inativar lead</div>`
       : statusEfetivo === 'inativo'
-      ? `<div class="dditem" onclick="closeAllDropdowns();alterarStatusLead('${esc(c.email)}','trial')">Reativar como Trial</div>`
+      ? `<div class="dditem" onclick="closeAllDropdowns();alterarStatusLead('${esc(c.id)}','trial')">Reativar como Trial</div>`
       : '';
 
     return `<tr>
@@ -1568,18 +1568,22 @@ function closeAllDropdowns() {
 }
 document.addEventListener('click', closeAllDropdowns);
 
-async function alterarStatusLead(email, novoStatus) {
+async function alterarStatusLead(id, novoStatus) {
+  // Usa o endpoint protegido PUT /clientes/:id — mais confiável que o endpoint público
+  const campos = novoStatus === 'inativo'
+    ? { statusLead: 'inativo', lojaBloqueada: true, ativo: false }
+    : { statusLead: 'trial', lojaBloqueada: false };
   try {
-    const r = await api('/clientes/alterar-status', {
-      method: 'POST',
-      body: JSON.stringify({ token: TOKEN, email, status: novoStatus }),
+    const r = await api(`/clientes/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(campos),
     });
     const data = await r.json();
     if (!r.ok) { toast(data.erro || 'Erro ao alterar status', 'error'); return; }
     toast(novoStatus === 'inativo' ? 'Lead marcado como inativo' : 'Lead reativado como trial');
     carregarClientes();
-  } catch {
-    toast('Erro ao alterar status', 'error');
+  } catch (e) {
+    toast('Erro ao alterar status: ' + e, 'error');
   }
 }
 
