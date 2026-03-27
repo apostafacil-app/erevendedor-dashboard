@@ -1362,21 +1362,40 @@ async function buscarAssinaturas() {
     const data = await resp.json();
     const subs = data.subscriptions ?? [];
     if (!subs.length) {
-      listEl.innerHTML = `<div style="padding:12px;color:var(--text-muted);font-size:13px">${idDigitado ? 'ID não encontrado no Asaas.' : 'Nenhuma assinatura encontrada.'}</div>`;
+      listEl.innerHTML = `<div style="padding:12px;color:var(--text-muted);font-size:13px">Nenhuma assinatura encontrada.</div>`;
       return;
     }
-    listEl.innerHTML = subs.map(s => `
-      <div onclick="selecionarAssinatura('${s.id}')"
-        style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border2);font-size:13px;
-               display:flex;justify-content:space-between;align-items:center;gap:8px;
-               transition:background .15s"
-        onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background=''">
-        <div>
-          <div style="font-weight:600;color:var(--text)">${esc(s.customerName)}</div>
-          <div style="font-size:11px;color:var(--text-muted)">${s.id} · R$${s.value?.toFixed(2)} · vence ${s.nextDueDate ?? '—'}</div>
-        </div>
-        <span style="color:var(--accent);font-size:11px;font-weight:700">Selecionar</span>
-      </div>`).join('');
+    window._asaasSubs = subs;
+
+    const renderSubsItems = (filtro) => {
+      const lista = filtro
+        ? subs.filter(s => (s.customerName || '').toLowerCase().includes(filtro.toLowerCase()))
+        : subs;
+      return lista.length
+        ? lista.map(s => `
+            <div onclick="selecionarAssinatura('${s.id}')"
+              style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border2);font-size:13px;
+                     display:flex;justify-content:space-between;align-items:center;gap:8px;transition:background .15s"
+              onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background=''">
+              <div>
+                <div style="font-weight:600;color:var(--text)">${esc(s.customerName)}</div>
+                <div style="font-size:11px;color:var(--text-muted)">${s.id} · R$${s.value?.toFixed(2)} · vence ${s.nextDueDate ?? '—'}</div>
+              </div>
+              <span style="color:var(--accent);font-size:11px;font-weight:700">Selecionar</span>
+            </div>`).join('')
+        : `<div style="padding:12px;color:var(--text-muted);font-size:13px">Sem resultados para "${esc(filtro)}".</div>`;
+    };
+
+    listEl.innerHTML = `
+      <div style="padding:8px 10px;border-bottom:1px solid var(--border2);background:#f8fafc;position:sticky;top:0">
+        <input id="asaas-filter-input" type="text" placeholder="🔍 Filtrar por nome do cliente..."
+          style="width:100%;padding:6px 10px;border:1px solid var(--border2);border-radius:6px;font-size:12px;outline:none;background:#fff">
+      </div>
+      <div id="asaas-subs-items">${renderSubsItems('')}</div>`;
+
+    document.getElementById('asaas-filter-input').addEventListener('input', function() {
+      document.getElementById('asaas-subs-items').innerHTML = renderSubsItems(this.value);
+    });
   } catch (e) {
     listEl.innerHTML = `<div style="padding:12px;color:var(--red);font-size:13px">Erro: ${e.message}</div>`;
   }
