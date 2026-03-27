@@ -205,6 +205,18 @@ tr:hover td{background:#f8fafc;}
 .btn-danger{background:#fef2f2;border:1.5px solid #fecaca;color:var(--red);}
 .btn-danger:hover{background:#fee2e2;}
 .btn-sm{padding:6px 12px;font-size:12px;}
+/* ── Dropdown de ações ─────────────────────────────────────────── */
+.dd-wrap{position:relative;display:inline-block;}
+.dd-menu{display:none;position:absolute;right:0;top:calc(100% + 4px);background:var(--card);
+  border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);
+  min-width:170px;z-index:999;overflow:hidden;}
+.dd-menu.open{display:block;}
+.dditem{padding:9px 16px;font-size:13px;cursor:pointer;color:var(--text);transition:background .15s;}
+.dditem:hover{background:var(--hover);}
+.dditem-warn{color:#d97706;}
+.dditem-warn:hover{background:#fffbeb;}
+.dditem-danger{color:var(--red);}
+.dditem-danger:hover{background:#fef2f2;}
 .btn-icon{padding:7px 9px;}
 
 /* ── Filters ───────────────────────────────────────────────────── */
@@ -1223,11 +1235,10 @@ function renderClientes(clientes) {
       : '<span style="color:var(--text-muted)">—</span>';
 
     const toggleLabel = c.lojaBloqueada ? 'Desbloquear' : 'Bloquear';
-    const toggleClass = c.lojaBloqueada ? 'btn-primary' : 'btn-outline';
-    const leadBtn = sl === 'trial'
-      ? `<button class="btn btn-outline btn-sm" style="color:var(--yellow,#d97706);border-color:var(--yellow,#d97706)" onclick="alterarStatusLead('${esc(c.email)}','inativo')">Inativar</button>`
-      : sl === 'inativo'
-      ? `<button class="btn btn-outline btn-sm" onclick="alterarStatusLead('${esc(c.email)}','trial')">Reativar</button>`
+    const leadItem = statusEfetivo === 'trial'
+      ? `<div class="dditem dditem-warn" onclick="closeAllDropdowns();alterarStatusLead('${esc(c.email)}','inativo')">Inativar lead</div>`
+      : statusEfetivo === 'inativo'
+      ? `<div class="dditem" onclick="closeAllDropdowns();alterarStatusLead('${esc(c.email)}','trial')">Reativar como Trial</div>`
       : '';
 
     return `<tr>
@@ -1240,11 +1251,14 @@ function renderClientes(clientes) {
       <td>${badge}</td>
       <td>${ass}</td>
       <td>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-          <button class="btn btn-outline btn-sm" onclick="abrirModalCliente('${esc(c.id)}')">Editar</button>
-          ${leadBtn}
-          <button class="btn ${toggleClass} btn-sm" onclick="toggleLoja('${esc(c.id)}','${esc(c.nomeLoja)}',${c.lojaBloqueada})">${toggleLabel}</button>
-          <button class="btn btn-danger btn-sm" onclick="abrirExcluir('${esc(c.id)}','${esc(c.nomeLoja)}')">Excluir</button>
+        <div class="dd-wrap">
+          <button class="btn btn-outline btn-sm dd-trigger" onclick="toggleDropdown(event,'dd-${esc(c.id)}')">Ações ▾</button>
+          <div class="dd-menu" id="dd-${esc(c.id)}">
+            <div class="dditem" onclick="closeAllDropdowns();abrirModalCliente('${esc(c.id)}')">✏️ Editar</div>
+            ${leadItem}
+            <div class="dditem" onclick="closeAllDropdowns();toggleLoja('${esc(c.id)}','${esc(c.nomeLoja)}',${c.lojaBloqueada})">${c.lojaBloqueada ? '🔓 Desbloquear' : '🔒 Bloquear'}</div>
+            <div class="dditem dditem-danger" onclick="closeAllDropdowns();abrirExcluir('${esc(c.id)}','${esc(c.nomeLoja)}')">🗑️ Excluir</div>
+          </div>
         </div>
       </td>
     </tr>`;
@@ -1407,6 +1421,18 @@ function selecionarAssinatura(id) {
   listEl.style.display = 'none';
   listEl.innerHTML = '';
 }
+
+function toggleDropdown(e, id) {
+  e.stopPropagation();
+  const menu = document.getElementById(id);
+  const isOpen = menu.classList.contains('open');
+  closeAllDropdowns();
+  if (!isOpen) menu.classList.add('open');
+}
+function closeAllDropdowns() {
+  document.querySelectorAll('.dd-menu.open').forEach(m => m.classList.remove('open'));
+}
+document.addEventListener('click', closeAllDropdowns);
 
 async function alterarStatusLead(email, novoStatus) {
   try {
