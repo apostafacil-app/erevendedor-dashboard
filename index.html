@@ -1312,6 +1312,7 @@ async function salvarCliente() {
     toast(clienteEditandoId ? 'Cliente atualizado!' : 'Cliente cadastrado!');
     fecharModal('modal-cliente');
     filtrarClientes();
+    carregarDashboard();
   } catch { toast('Erro de conexão', 'error'); }
 }
 
@@ -1342,6 +1343,7 @@ async function confirmarExclusao() {
     toast('Cliente excluído.');
     fecharModal('modal-excluir');
     filtrarClientes();
+    carregarDashboard();
   } catch { toast('Erro de conexão', 'error'); }
 }
 
