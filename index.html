@@ -1572,7 +1572,7 @@ async function alterarStatusLead(email, novoStatus) {
   try {
     const r = await api('/clientes/alterar-status', {
       method: 'POST',
-      body: JSON.stringify({ email, status: novoStatus }),
+      body: JSON.stringify({ token: TOKEN, email, status: novoStatus }),
     });
     const data = await r.json();
     if (!r.ok) { toast(data.erro || 'Erro ao alterar status', 'error'); return; }
