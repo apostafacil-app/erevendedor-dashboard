@@ -1306,9 +1306,10 @@ function renderClientes(clientes) {
       : '<span style="color:var(--text-muted)">—</span>';
 
     const toggleLabel = c.lojaBloqueada ? 'Desbloquear' : 'Bloquear';
-    const leadItem = statusEfetivo === 'trial'
+    // Reativar só aparece se inativo E loja não bloqueada (bloqueada = desbloquear primeiro)
+    const leadItem = !c.lojaBloqueada && statusEfetivo === 'trial'
       ? `<div class="dditem dditem-warn" onclick="closeAllDropdowns();alterarStatusLead('${esc(c.email)}','inativo')">Inativar lead</div>`
-      : statusEfetivo === 'inativo'
+      : !c.lojaBloqueada && statusEfetivo === 'inativo'
       ? `<div class="dditem" onclick="closeAllDropdowns();alterarStatusLead('${esc(c.email)}','trial')">Reativar como Trial</div>`
       : '';
 
