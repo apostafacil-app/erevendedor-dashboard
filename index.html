@@ -523,6 +523,7 @@ tr:hover td{background:#f8fafc;}
                   <th>Trial</th>
                   <th>Status</th>
                   <th>Assinatura</th>
+                  <th>Cadastro</th>
                   <th>Ações</th>
                 </tr>
               </thead>
@@ -1242,7 +1243,7 @@ async function filtrarClientes() {
 function renderClientes(clientes) {
   const tbody = document.getElementById('tbody-clientes');
   if (!clientes.length) {
-    tbody.innerHTML = `<tr><td colspan="8" class="table-empty">Nenhum cliente encontrado.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="table-empty">Nenhum cliente encontrado.</td></tr>`;
     return;
   }
 
@@ -1292,6 +1293,7 @@ function renderClientes(clientes) {
       <td>${trial}</td>
       <td>${badge}</td>
       <td>${ass}</td>
+      <td style="color:var(--text-dim);white-space:nowrap;font-size:12px">${c.criadoEm ? new Date(c.criadoEm._seconds ? c.criadoEm._seconds * 1000 : c.criadoEm).toLocaleDateString('pt-BR') : '—'}</td>
       <td>
         <div class="dd-wrap">
           <button class="btn btn-outline btn-sm dd-trigger" onclick="toggleDropdown(event,'dd-${esc(c.id)}')">Ações ▾</button>
