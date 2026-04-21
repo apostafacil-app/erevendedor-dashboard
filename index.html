@@ -689,6 +689,30 @@ tr:hover td{background:#f8fafc;}
           </p>
         </div>
 
+        <!-- App Mobile -->
+        <div class="config-card">
+          <div class="config-card-header">
+            <div class="config-card-icon green">📱</div>
+            <div>
+              <div class="config-card-title">App Mobile</div>
+              <div class="config-card-sub">Segredo compartilhado com o app eRevendedor para autenticar dispositivos</div>
+            </div>
+          </div>
+          <div class="config-grid">
+            <div class="form-group span2" style="grid-column:span 2">
+              <label>App Secret (X-App-Secret)</label>
+              <div style="display:flex;gap:8px">
+                <input type="password" id="cfg-app-secret" placeholder="Cole aqui o segredo gerado — salve antes de fechar" style="flex:1">
+                <button type="button" class="btn btn-outline" onclick="gerarAppSecret()" title="Gerar novo segredo aleatório">🔑 Gerar</button>
+                <button type="button" class="btn btn-outline" id="btn-ver-app-secret" onclick="toggleVerAppSecret()" title="Mostrar/ocultar">👁</button>
+              </div>
+            </div>
+          </div>
+          <p style="margin-top:14px;font-size:12px;color:var(--text-muted);background:#f8fafc;border-radius:8px;padding:12px">
+            Clique em <strong>🔑 Gerar</strong> para criar um segredo aleatório. Copie o valor exibido e repasse ao responsável do app para substituir em <code>src/api/dashboardConfig.ts</code>. Após salvar, o campo ficará mascarado.
+          </p>
+        </div>
+
         <!-- eRevendedor -->
         <div class="config-card">
           <div class="config-card-header">
@@ -954,6 +978,25 @@ function formatarDataSimples(str) {
   if (!str) return '—';
   const [y, m, d] = str.split('-');
   return `${d}/${m}/${y}`;
+}
+
+// ─── App Secret helpers ────────────────────────────────────────────────────
+function gerarAppSecret() {
+  const arr = new Uint8Array(32);
+  window.crypto.getRandomValues(arr);
+  const hex = Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+  const el = document.getElementById('cfg-app-secret');
+  el.type = 'text';
+  el.value = hex;
+  document.getElementById('btn-ver-app-secret').textContent = '🙈';
+  toast('🔑 Segredo gerado! Copie agora e repasse ao app antes de salvar.');
+}
+
+function toggleVerAppSecret() {
+  const el = document.getElementById('cfg-app-secret');
+  const btn = document.getElementById('btn-ver-app-secret');
+  if (el.type === 'password') { el.type = 'text'; btn.textContent = '🙈'; }
+  else { el.type = 'password'; btn.textContent = '👁'; }
 }
 
 // ─── Sidebar mobile ────────────────────────────────────────────────────────
@@ -1798,6 +1841,10 @@ async function carregarConfiguracoes() {
     elWebhookToken.placeholder = c.asaasWebhookTokenDefinido ? 'Token definido — deixe em branco para manter' : 'Defina um token secreto para validar requests do Asaas';
     document.getElementById('cfg-admin-secret').value = '';
     document.getElementById('cfg-admin-email').value = c.adminEmail || '';
+
+    const elAppSecret = document.getElementById('cfg-app-secret');
+    elAppSecret.value = '';
+    elAppSecret.placeholder = c.appSecretDefinido ? 'Definido — deixe em branco para manter' : 'Clique em 🔑 Gerar ou cole o valor aqui';
   } catch { toast('Erro ao carregar configurações', 'error'); }
 }
 
@@ -1840,6 +1887,7 @@ async function salvarConfiguracoes() {
     diasNotif4Apos: parseInt(document.getElementById('cfg-notif4').value),
     webhookNotificacaoUrl: document.getElementById('cfg-webhook').value.trim(),
     urlNotifTrialFollowUp: document.getElementById('cfg-trial-followup-url').value.trim(),
+    appSecret: document.getElementById('cfg-app-secret').value,
     urlAtivarLoja: document.getElementById('cfg-url-ativar').value.trim(),
     urlDesativarLoja: document.getElementById('cfg-url-desativar').value.trim(),
     tokenLoja: document.getElementById('cfg-token-loja').value,
