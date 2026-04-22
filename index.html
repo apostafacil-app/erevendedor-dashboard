@@ -496,6 +496,9 @@ tr:hover td{background:#f8fafc;}
             <button class="btn btn-outline" onclick="abrirModalNotif('todos')" title="Enviar push para todos os devices ativos">
               📢 Notificar todos
             </button>
+            <button class="btn btn-outline" onclick="abrirModalNotif('todos_donos')" title="Enviar push apenas para donos de loja">
+              👑 Só donos
+            </button>
             <button class="btn btn-primary" onclick="abrirModalCliente()">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Novo cliente
@@ -1440,6 +1443,7 @@ function abrirModalNotif(destino, idOuDeviceId = null, nomeLoja = null) {
 
   const label = document.getElementById('notif-push-destino-label');
   if (destino === 'todos') label.innerHTML = '📢 Todos os dispositivos ativos';
+  else if (destino === 'todos_donos') label.innerHTML = '👑 Apenas donos de loja';
   else if (nomeLoja) label.innerHTML = `🏪 ${esc(nomeLoja)}`;
   else label.innerHTML = '📱 Dispositivo selecionado';
 
