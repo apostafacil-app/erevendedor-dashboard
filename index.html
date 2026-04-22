@@ -925,12 +925,17 @@ tr:hover td{background:#f8fafc;}
       <input type="text" id="notif-push-titulo" placeholder="Ex: Novidade no eRevendedor" maxlength="100" oninput="atualizarPreviewNotif()">
     </div>
 
-    <div class="form-group" style="margin-bottom:16px">
+    <div class="form-group" style="margin-bottom:14px">
       <div style="display:flex;justify-content:space-between">
         <label>Mensagem</label>
         <span id="notif-count-msg" style="font-size:11px;font-weight:400;text-transform:none;letter-spacing:0;color:#9ca3af">0 / 300</span>
       </div>
       <textarea id="notif-push-mensagem" rows="3" placeholder="Texto que o usuário verá na notificação…" maxlength="300" oninput="atualizarPreviewNotif()" style="resize:none;line-height:1.55"></textarea>
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Link ao tocar <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#9ca3af">(opcional)</span></label>
+      <input type="url" id="notif-push-link" placeholder="https://app.erevendedor.com/renovar" oninput="atualizarPreviewNotif()">
     </div>
 
     <!-- Preview estilo notificação iOS -->
@@ -945,6 +950,10 @@ tr:hover td{background:#f8fafc;}
           </div>
           <div id="preview-titulo" style="font-size:14px;font-weight:600;color:#fff;line-height:1.3;margin-bottom:3px;word-break:break-word">Título da notificação</div>
           <div id="preview-mensagem" style="font-size:13px;color:rgba(255,255,255,.55);line-height:1.4;word-break:break-word">Texto da mensagem aparecerá aqui…</div>
+          <div id="preview-link" style="display:none;margin-top:6px;font-size:11px;color:#4ade80;display:flex;align-items:center;gap:4px">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            <span id="preview-link-url" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -1422,6 +1431,7 @@ function abrirModalNotif(destino, idOuDeviceId = null, nomeLoja = null) {
   const elMsg = document.getElementById('notif-push-mensagem');
   elTitulo.value = '';
   elMsg.value = '';
+  document.getElementById('notif-push-link').value = '';
   atualizarPreviewNotif();
 
   document.getElementById('modal-notif-push').classList.add('open');
@@ -1431,20 +1441,28 @@ function abrirModalNotif(destino, idOuDeviceId = null, nomeLoja = null) {
 function atualizarPreviewNotif() {
   const titulo = document.getElementById('notif-push-titulo').value;
   const msg = document.getElementById('notif-push-mensagem').value;
+  const link = document.getElementById('notif-push-link').value.trim();
 
   // Contadores
   document.getElementById('notif-count-titulo').textContent = `${titulo.length} / 100`;
   document.getElementById('notif-count-msg').textContent = `${msg.length} / 300`;
+  document.getElementById('notif-count-titulo').style.color = titulo.length > 90 ? '#ef4444' : titulo.length > 75 ? '#f59e0b' : '#9ca3af';
+  document.getElementById('notif-count-msg').style.color = msg.length > 270 ? '#ef4444' : msg.length > 240 ? '#f59e0b' : '#9ca3af';
 
-  // Cor do contador quando perto do limite
-  document.getElementById('notif-count-titulo').style.color = titulo.length > 90 ? '#ef4444' : titulo.length > 75 ? '#f59e0b' : 'var(--text-muted)';
-  document.getElementById('notif-count-msg').style.color = msg.length > 270 ? '#ef4444' : msg.length > 240 ? '#f59e0b' : 'var(--text-muted)';
-
-  // Preview
+  // Preview texto
   document.getElementById('preview-titulo').textContent = titulo || 'Título da notificação';
-  document.getElementById('preview-titulo').style.color = titulo ? '#111827' : '#9ca3af';
+  document.getElementById('preview-titulo').style.color = titulo ? '#fff' : 'rgba(255,255,255,.3)';
   document.getElementById('preview-mensagem').textContent = msg || 'Texto da mensagem aparecerá aqui…';
-  document.getElementById('preview-mensagem').style.color = msg ? '#6b7280' : '#d1d5db';
+  document.getElementById('preview-mensagem').style.color = msg ? 'rgba(255,255,255,.55)' : 'rgba(255,255,255,.2)';
+
+  // Preview link
+  const elLink = document.getElementById('preview-link');
+  if (link) {
+    elLink.style.display = 'flex';
+    document.getElementById('preview-link-url').textContent = link.replace(/^https?:\/\//, '');
+  } else {
+    elLink.style.display = 'none';
+  }
 }
 
 async function enviarNotificacaoPush() {
@@ -1456,7 +1474,9 @@ async function enviarNotificacaoPush() {
   btn.disabled = true;
   btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:5px;animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Enviando…';
 
+  const link = document.getElementById('notif-push-link').value.trim();
   const body = { destino: notifPushDestino, titulo, mensagem };
+  if (link) body.data = { link };
   if (notifPushClienteId) body.clienteId = notifPushClienteId;
   if (notifPushDeviceId) body.deviceId = notifPushDeviceId;
 
