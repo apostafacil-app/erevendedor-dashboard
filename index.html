@@ -888,6 +888,46 @@ tr:hover td{background:#f8fafc;}
         <div id="asaas-subs-list" style="display:none;margin-top:8px;border:1.5px solid var(--border2);border-radius:10px;max-height:200px;overflow-y:auto;background:#fff;"></div>
       </div>
     </div>
+    <!-- Acesso ao app — só aparece ao editar -->
+    <div id="mc-app-acesso-section" style="display:none;border-top:1.5px solid var(--border2);padding-top:18px;margin-top:4px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);margin-bottom:12px">📱 Acesso ao app mobile</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+          <input type="radio" name="mc-app-modo" value="herda_plano" checked style="margin-top:3px;accent-color:var(--primary)">
+          <div>
+            <div style="font-size:13px;font-weight:500;color:var(--text)">Seguir regra do plano</div>
+            <div id="mc-app-plano-hint" style="font-size:11px;color:var(--text-dim)">Verificando…</div>
+          </div>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+          <input type="radio" name="mc-app-modo" value="trial" style="margin-top:3px;accent-color:var(--primary)">
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:500;color:var(--text)">Trial (avaliação gratuita)</div>
+            <div id="mc-app-trial-row" style="display:none;margin-top:8px;flex-direction:column;gap:8px">
+              <!-- Atalhos de prazo -->
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <button type="button" class="btn btn-outline" style="padding:4px 10px;font-size:11px;border-radius:6px" onclick="definirTrialPreset(30)">30 dias</button>
+                <button type="button" class="btn btn-outline" style="padding:4px 10px;font-size:11px;border-radius:6px" onclick="definirTrialPreset(60)">60 dias</button>
+                <button type="button" class="btn btn-outline" style="padding:4px 10px;font-size:11px;border-radius:6px" onclick="definirTrialPreset(180)">6 meses</button>
+                <button type="button" class="btn btn-outline" style="padding:4px 10px;font-size:11px;border-radius:6px" onclick="definirTrialPreset(365)">12 meses</button>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:11px;color:var(--text-dim)">Válido até:</span>
+                <input type="date" id="mc-app-trial-ate" style="padding:5px 10px;border:1.5px solid var(--border2);border-radius:7px;font-size:13px">
+              </div>
+            </div>
+          </div>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+          <input type="radio" name="mc-app-modo" value="bloqueado" style="margin-top:3px;accent-color:var(--primary)">
+          <div>
+            <div style="font-size:13px;font-weight:500;color:var(--text)">Bloqueado manualmente</div>
+            <div style="font-size:11px;color:var(--text-dim)">Impede acesso independente do plano</div>
+          </div>
+        </label>
+      </div>
+    </div>
+
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="fecharModal('modal-cliente')">Cancelar</button>
       <button class="btn btn-primary" onclick="salvarCliente()">Salvar</button>
@@ -1113,6 +1153,7 @@ function mostrarApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').classList.add('visible');
   carregarDashboard();
+  carregarPlanos();
   document.getElementById('webhook-asaas-url').textContent = BACKEND + '/asaas/webhook';
 }
 
@@ -1361,6 +1402,87 @@ function renderPlanos(porPlano, total) {
   }).join('');
 }
 
+// ─── Planos (cache de permite_app para coluna App) ─────────────────────────
+let planosMap = {}; // nomePlano → { permite_app: boolean }
+
+async function carregarPlanos() {
+  try {
+    const r = await api('/planos');
+    if (!r.ok) return;
+    const { planos } = await r.json();
+    planosMap = {};
+    for (const p of planos) planosMap[p.nome] = p;
+  } catch { /* silencioso */ }
+}
+
+// Helper frontend — espelha calcularAutorizacao() do backend
+function calcularAutorizacaoFrontend(cliente) {
+  const override = cliente.app_acesso;
+  if (override?.modo === 'bloqueado') {
+    return { autorizado: false, modo: 'bloqueado', motivo: 'bloqueio_manual', dias_restantes: null };
+  }
+  if (override?.modo === 'trial') {
+    const ate = override.trial_ate ? new Date(typeof override.trial_ate === 'string' ? override.trial_ate : override.trial_ate._seconds * 1000) : null;
+    if (!ate) return { autorizado: false, modo: 'bloqueado', motivo: 'bloqueio_manual', dias_restantes: null };
+    const dias = Math.ceil((ate.getTime() - Date.now()) / 86400000);
+    return { autorizado: dias >= 0, modo: 'trial', motivo: dias < 0 ? 'trial_expirado' : null, dias_restantes: dias, expira_em: ate };
+  }
+  // Herda plano
+  const plano = planosMap[cliente.plano];
+  if (cliente.plano === null || cliente.plano === undefined) {
+    return { autorizado: true, modo: 'padrao', motivo: null, dias_restantes: null };
+  }
+  const permite = plano ? !!plano.permite_app : false;
+  return { autorizado: permite, modo: 'padrao', motivo: permite ? null : 'plano_nao_permite', dias_restantes: null };
+}
+
+// Carrega app_acesso no modal de edição
+function carregarAppAcessoModal(c) {
+  const section = document.getElementById('mc-app-acesso-section');
+  section.style.display = 'block';
+  const modo = c.app_acesso?.modo || 'herda_plano';
+  const radio = document.querySelector(`input[name="mc-app-modo"][value="${modo}"]`);
+  if (radio) radio.checked = true;
+  // Trial date
+  const trialRow = document.getElementById('mc-app-trial-row');
+  const trialInput = document.getElementById('mc-app-trial-ate');
+  if (modo === 'trial') {
+    trialRow.style.display = 'flex';
+    if (c.app_acesso?.trial_ate) {
+      const d = new Date(c.app_acesso.trial_ate._seconds ? c.app_acesso.trial_ate._seconds * 1000 : c.app_acesso.trial_ate);
+      trialInput.value = d.toISOString().split('T')[0];
+    }
+  } else {
+    trialRow.style.display = 'none';
+    trialInput.value = '';
+  }
+  // Plano hint
+  const auth = calcularAutorizacaoFrontend(c);
+  const planoNome = c.plano || 'Sem plano';
+  const permiteStr = planosMap[c.plano] ? (planosMap[c.plano].permite_app ? '✅ libera' : '⛔ bloqueia') : '—';
+  document.getElementById('mc-app-plano-hint').textContent = `${planoNome} → ${permiteStr}`;
+  // Listener no radio trial para mostrar/ocultar date
+  document.querySelectorAll('input[name="mc-app-modo"]').forEach(r => {
+    r.addEventListener('change', () => {
+      document.getElementById('mc-app-trial-row').style.display =
+        document.querySelector('input[name="mc-app-modo"]:checked').value === 'trial' ? 'flex' : 'none';
+    });
+  });
+}
+
+// Atalho de prazo para o trial do app
+function definirTrialPreset(dias) {
+  // Seleciona radio "trial" se ainda não estiver
+  const radioTrial = document.querySelector('input[name="mc-app-modo"][value="trial"]');
+  if (radioTrial && !radioTrial.checked) {
+    radioTrial.checked = true;
+    document.getElementById('mc-app-trial-row').style.display = 'flex';
+  }
+  const d = new Date();
+  d.setDate(d.getDate() + dias);
+  document.getElementById('mc-app-trial-ate').value = d.toISOString().split('T')[0];
+}
+
 // ─── Dispositivos (cache para coluna App na tabela de clientes) ────────────
 let dispositivosMap = {}; // clienteId → device mais recente
 
@@ -1607,20 +1729,32 @@ function renderClientes(clientes) {
       ? `<div class="dditem" onclick="closeAllDropdowns();alterarStatusLead('${esc(c.id)}','trial')">Reativar como Trial</div>`
       : '';
 
-    // Dot de acesso ao app mobile
+    // Coluna App: dot de conexão + badge de autorização
     const dev = dispositivosMap[c.id];
     let appDot;
+    // Conexão
     if (!dev) {
-      appDot = `<span title="Nunca acessou o app" style="color:#9ca3af;font-size:16px">⚪</span>`;
+      appDot = `<span title="Nunca acessou o app" style="color:#9ca3af;font-size:15px">⚪</span>`;
     } else if (dev.online) {
-      appDot = `<span title="Online agora\n${esc(dev.usuarioEmail)} · ${esc(dev.plataforma)} ${esc(dev.appVersion)}" style="color:#22c55e;font-size:16px;cursor:default">🟢</span>`;
+      appDot = `<span title="Online agora · ${esc(dev.usuarioEmail)} · ${esc(dev.plataforma)} ${esc(dev.appVersion)}" style="color:#22c55e;font-size:15px;cursor:default">🟢</span>`;
     } else {
       const ultimo = new Date(dev.ultimoAcesso);
       const diffH = (Date.now() - ultimo.getTime()) / 3600000;
-      const cor = diffH < 1 ? '#eab308' : '#9ca3af';
-      const circulo = diffH < 1 ? '🟡' : '⚪';
-      appDot = `<span title="Offline · último acesso: ${ultimo.toLocaleString('pt-BR')}\n${esc(dev.usuarioEmail)} · ${esc(dev.plataforma)} ${esc(dev.appVersion)}" style="color:${cor};font-size:16px;cursor:default">${circulo}</span>`;
+      appDot = `<span title="Offline · ${ultimo.toLocaleString('pt-BR')} · ${esc(dev.usuarioEmail)}" style="color:${diffH < 1 ? '#eab308' : '#9ca3af'};font-size:15px;cursor:default">${diffH < 1 ? '🟡' : '⚪'}</span>`;
     }
+    // Autorização
+    const auth = calcularAutorizacaoFrontend(c);
+    let authBadge = '';
+    if (!auth.autorizado) {
+      const tip = auth.motivo === 'bloqueio_manual' ? 'Bloqueado manualmente'
+        : auth.motivo === 'trial_expirado' ? `Trial expirado`
+        : 'Plano não permite app';
+      authBadge = `<span title="${tip}" style="font-size:12px;margin-left:2px">🔒</span>`;
+    } else if (auth.modo === 'trial') {
+      const tip = auth.dias_restantes !== null ? `Trial — ${auth.dias_restantes} dia(s) restante(s)` : 'Em trial';
+      authBadge = `<span title="${tip}" style="font-size:12px;margin-left:2px;color:#3b82f6">⏳</span>`;
+    }
+    appDot = `<div style="display:flex;align-items:center;justify-content:center;gap:1px">${appDot}${authBadge}</div>`;
 
     return `<tr>
       <td><strong style="color:var(--text)">${esc(c.nomeLoja)}</strong></td>
@@ -1672,6 +1806,8 @@ async function abrirModalCliente(id = null) {
       if (!c.periodoTrial) { ptSel.value = ''; ptCustom.style.display='none'; }
       else if ([7,15,30].includes(c.periodoTrial)) { ptSel.value = String(c.periodoTrial); ptCustom.style.display='none'; }
       else { ptSel.value = 'outro'; ptCustom.style.display='block'; ptCustom.value = c.periodoTrial; }
+      // Acesso ao app
+      carregarAppAcessoModal(c);
     } catch { toast('Erro ao carregar dados', 'error'); return; }
   } else {
     titulo.textContent = 'Novo cliente';
@@ -1683,6 +1819,7 @@ async function abrirModalCliente(id = null) {
     document.getElementById('mc-periodoTrial').value = '';
     document.getElementById('mc-periodoTrialCustom').style.display = 'none';
     document.getElementById('mc-periodoTrialCustom').value = '';
+    document.getElementById('mc-app-acesso-section').style.display = 'none';
   }
 
   // Limpa lista de busca Asaas de sessões anteriores
@@ -1709,6 +1846,17 @@ async function salvarCliente() {
       return Number(sel);
     })(),
   };
+
+  // Inclui app_acesso só no PUT (edição)
+  if (clienteEditandoId) {
+    const modo = document.querySelector('input[name="mc-app-modo"]:checked')?.value || 'herda_plano';
+    const appAcesso = { modo };
+    if (modo === 'trial') {
+      const trialAte = document.getElementById('mc-app-trial-ate').value;
+      appAcesso.trial_ate = trialAte ? new Date(trialAte).toISOString() : null;
+    }
+    body.app_acesso = appAcesso;
+  }
 
   if (!body.nomeLoja || !body.nomeCliente || !body.email) {
     toast('Nome da loja, cliente e e-mail são obrigatórios', 'error'); return;
