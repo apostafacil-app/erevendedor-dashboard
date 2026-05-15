@@ -1018,15 +1018,19 @@ tr:hover td{background:#f8fafc;}
           </div>
           <div class="config-grid">
             <div class="form-group span2">
-              <label>URL da API de email</label>
-              <input type="url" id="cfg-email-api-url" placeholder="https://cloud21.mailgrid.net.br/sendmail/">
+              <label>URL do endpoint REST <span style="color:var(--text-dim);font-weight:400;font-size:11px">(sempre https://api.mailgrid.net.br/sendmail/)</span></label>
+              <input type="url" id="cfg-email-api-url" placeholder="https://api.mailgrid.net.br/sendmail/">
             </div>
             <div class="form-group">
-              <label>Usuário / host SMTP</label>
-              <input type="text" id="cfg-email-api-user" placeholder="usuario@seudominio.com">
+              <label>Servidor SMTP <span style="color:var(--text-dim);font-weight:400;font-size:11px">(host_smtp, ex: cloud21.mailgrid.net.br)</span></label>
+              <input type="text" id="cfg-email-smtp-host" placeholder="cloud21.mailgrid.net.br">
             </div>
             <div class="form-group">
-              <label>Senha da API</label>
+              <label>Usuário SMTP <span style="color:var(--text-dim);font-weight:400;font-size:11px">(usuario_smtp)</span></label>
+              <input type="text" id="cfg-email-api-user" placeholder="smtp@seudominio.com">
+            </div>
+            <div class="form-group">
+              <label>Senha SMTP <span style="color:var(--text-dim);font-weight:400;font-size:11px">(senha_smtp)</span></label>
               <div class="pw-wrap">
                 <input type="password" id="cfg-email-api-pass" placeholder="Deixe em branco para manter">
                 <button class="pw-toggle" onclick="togglePw('cfg-email-api-pass', this)">👁</button>
@@ -2358,6 +2362,7 @@ async function carregarConfiguracoes() {
 
     // Email marketing
     document.getElementById('cfg-email-api-url').value = c.emailApiUrl || '';
+    document.getElementById('cfg-email-smtp-host').value = c.emailSmtpHost || '';
     document.getElementById('cfg-email-api-user').value = c.emailApiUser || '';
     const elEmailPass = document.getElementById('cfg-email-api-pass');
     elEmailPass.value = '';
@@ -2415,6 +2420,7 @@ async function salvarConfiguracoes() {
     asaasAmbiente: document.getElementById('cfg-asaas-amb').value,
     asaasWebhookToken: document.getElementById('cfg-asaas-webhook-token').value,
     emailApiUrl: document.getElementById('cfg-email-api-url').value.trim(),
+    emailSmtpHost: document.getElementById('cfg-email-smtp-host').value.trim(),
     emailApiUser: document.getElementById('cfg-email-api-user').value.trim(),
     emailApiPass: document.getElementById('cfg-email-api-pass').value,
     emailFromAddress: document.getElementById('cfg-email-from-addr').value.trim(),
