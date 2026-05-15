@@ -2637,8 +2637,9 @@ async function salvarCampanha() {
       return;
     }
 
-    toast('Campanha criada para ' + data.totalDestinatarios + ' destinatário(s)!');
-    mostrarViewLista();
+    // Vai direto para o detalhe da campanha criada (evita falha no carregamento da lista)
+    toast('Campanha criada para ' + data.totalDestinatarios + ' destinatário(s)! Clique em ▶ Disparar para enviar.');
+    await abrirDetalheCampanha(data.id, data.nome);
   } catch (e) {
     console.error('[salvarCampanha] erro:', e);
     campCriarMostrarErro('Erro de conexão: ' + e.message);
