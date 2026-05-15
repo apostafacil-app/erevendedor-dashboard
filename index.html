@@ -748,6 +748,8 @@ tr:hover td{background:#f8fafc;}
             </div>
           </div>
 
+          <div id="camp-criar-erro" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px 16px;color:#991b1b;font-size:13px;margin-top:12px"></div>
+
           <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:16px">
             <button class="btn btn-outline" onclick="mostrarViewLista()">Cancelar</button>
             <button class="btn btn-primary" id="btn-criar-campanha" onclick="salvarCampanha()">Criar campanha</button>
@@ -2456,6 +2458,7 @@ function abrirCriarCampanha() {
   document.getElementById('camp-view-lista').style.display = 'none';
   document.getElementById('camp-view-criar').style.display = '';
   document.getElementById('camp-view-detalhe').style.display = 'none';
+  campCriarLimparErro();
   // reset form
   ['camp-nome','camp-assunto','camp-rem-nome','camp-rem-email','camp-corpo'].forEach(id => {
     document.getElementById(id).value = '';
@@ -2545,65 +2548,94 @@ async function previewAudiencia() {
   }
 }
 
+function campCriarMostrarErro(msg) {
+  const el = document.getElementById('camp-criar-erro');
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function campCriarLimparErro() {
+  const el = document.getElementById('camp-criar-erro');
+  if (el) { el.textContent = ''; el.style.display = 'none'; }
+}
+
 async function salvarCampanha() {
-  // Limpa erros anteriores
+  console.log('[salvarCampanha] iniciado');
+  campCriarLimparErro();
+
+  // Limpa bordas de erro anteriores
   ['camp-nome','camp-assunto','camp-corpo'].forEach(id => {
-    document.getElementById(id).style.border = '';
+    const el = document.getElementById(id);
+    if (el) el.style.border = '';
   });
 
-  const nome = document.getElementById('camp-nome').value.trim();
-  const assunto = document.getElementById('camp-assunto').value.trim();
-  const corpo = document.getElementById('camp-corpo').value.trim();
+  const nome    = (document.getElementById('camp-nome')    || {value:''}).value.trim();
+  const assunto = (document.getElementById('camp-assunto') || {value:''}).value.trim();
+  const corpo   = (document.getElementById('camp-corpo')   || {value:''}).value.trim();
 
-  // Valida campos obrigatórios com destaque visual
-  const erros = [];
-  if (!nome)   { erros.push('camp-nome');   }
-  if (!assunto){ erros.push('camp-assunto'); }
-  if (!corpo)  { erros.push('camp-corpo');   }
+  console.log('[salvarCampanha] campos:', { nome: !!nome, assunto: !!assunto, corpo: !!corpo });
 
-  if (erros.length) {
-    erros.forEach(id => {
-      document.getElementById(id).style.border = '2px solid #dc2626';
+  // Valida campos obrigatórios
+  const camposVazios = [];
+  if (!nome)    camposVazios.push('camp-nome');
+  if (!assunto) camposVazios.push('camp-assunto');
+  if (!corpo)   camposVazios.push('camp-corpo');
+
+  if (camposVazios.length) {
+    camposVazios.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.border = '2px solid #dc2626';
     });
-    // Scroll para o primeiro campo vazio
-    document.getElementById(erros[0]).scrollIntoView({ behavior: 'smooth', block: 'center' });
-    document.getElementById(erros[0]).focus();
-    toast(`Preencha: ${erros.map(id => ({
-      'camp-nome': 'Nome da campanha',
-      'camp-assunto': 'Assunto',
-      'camp-corpo': 'Corpo do email',
-    }[id])).join(', ')}`, 'error');
+    const nomes = { 'camp-nome': 'Nome da campanha', 'camp-assunto': 'Assunto', 'camp-corpo': 'Corpo do email' };
+    const msg = 'Preencha: ' + camposVazios.map(id => nomes[id]).join(', ');
+    campCriarMostrarErro(msg);
+    document.getElementById(camposVazios[0]).scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById(camposVazios[0]).focus();
     return;
   }
+
   const filtros = {};
-  const plano = document.getElementById('camp-filtro-plano').value;
+  const plano      = document.getElementById('camp-filtro-plano').value;
   const statusLead = document.getElementById('camp-filtro-status').value;
-  const bloqueada = document.getElementById('camp-filtro-bloqueada').value;
-  const search = document.getElementById('camp-filtro-search').value.trim();
-  if (plano) filtros.plano = plano;
-  if (statusLead) filtros.statusLead = statusLead;
+  const bloqueada  = document.getElementById('camp-filtro-bloqueada').value;
+  const search     = document.getElementById('camp-filtro-search').value.trim();
+  if (plano)           filtros.plano        = plano;
+  if (statusLead)      filtros.statusLead   = statusLead;
   if (bloqueada !== '') filtros.lojaBloqueada = bloqueada;
-  if (search) filtros.search = search;
+  if (search)          filtros.search       = search;
 
   const btn = document.getElementById('btn-criar-campanha');
   btn.disabled = true;
   btn.textContent = 'Criando…';
+
   try {
-    const r = await api('/campanhas', {
-      method: 'POST',
-      body: JSON.stringify({
-        nome, assunto, corpo,
-        audiencia: 'clientes',
-        filtros,
-        remetenteNome: document.getElementById('camp-rem-nome').value.trim() || null,
-        remetenteEmail: document.getElementById('camp-rem-email').value.trim() || null,
-      }),
-    });
+    const payload = {
+      nome, assunto, corpo,
+      audiencia: 'clientes',
+      filtros,
+      remetenteNome:  document.getElementById('camp-rem-nome').value.trim()  || null,
+      remetenteEmail: document.getElementById('camp-rem-email').value.trim() || null,
+    };
+    console.log('[salvarCampanha] payload:', payload);
+
+    const r = await api('/campanhas', { method: 'POST', body: JSON.stringify(payload) });
+    console.log('[salvarCampanha] status HTTP:', r.status);
+
     const data = await r.json();
-    if (!r.ok) { toast(data.erro || 'Erro ao criar campanha', 'error'); return; }
-    toast(`Campanha criada para ${data.totalDestinatarios} destinatário(s)!`);
+    console.log('[salvarCampanha] resposta:', data);
+
+    if (!r.ok) {
+      const msg = data.erro || 'Erro ao criar campanha (HTTP ' + r.status + ')';
+      campCriarMostrarErro(msg);
+      toast(msg, 'error');
+      return;
+    }
+
+    toast('Campanha criada para ' + data.totalDestinatarios + ' destinatário(s)!');
     mostrarViewLista();
-  } catch {
+  } catch (e) {
+    console.error('[salvarCampanha] erro:', e);
+    campCriarMostrarErro('Erro de conexão: ' + e.message);
     toast('Erro de conexão', 'error');
   } finally {
     btn.disabled = false;
