@@ -202,6 +202,7 @@ tr:hover td{background:#f8fafc;}
 .btn-primary:hover{background:var(--accent-dark);}
 .btn-outline{background:none;border:1.5px solid var(--border2);color:var(--text-dim);}
 .btn-outline:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+.camp-status-tab.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);font-weight:600;}
 .btn-danger{background:#fef2f2;border:1.5px solid #fecaca;color:var(--red);}
 .btn-danger:hover{background:#fee2e2;}
 .btn-sm{padding:6px 12px;font-size:12px;}
@@ -381,6 +382,14 @@ tr:hover td{background:#f8fafc;}
         <line x1="12" y1="18" x2="12.01" y2="18"/>
       </svg>
       Dispositivos
+    </button>
+    <button class="nav-item" id="nav-campanhas" onclick="mudarTab('campanhas',this)">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.71 3.41a2 2 0 0 1 1.99-2.18h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.5a16 16 0 0 0 6.59 6.59l1.36-1.36a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>
+        <path d="M17 2a5 5 0 0 1 5 5"/>
+        <path d="M17 6a1 1 0 0 1 1 1"/>
+      </svg>
+      Campanhas
     </button>
 
     <div class="sidebar-section">Sistema</div>
@@ -606,6 +615,208 @@ tr:hover td{background:#f8fafc;}
         </div>
       </div>
 
+      <!-- ── TAB: CAMPANHAS ───────────────────────────────────────────────── -->
+      <div id="tab-campanhas" class="tab-panel">
+
+        <!-- ── VIEW: LISTA ────────────────────────────────────────────────── -->
+        <div id="camp-view-lista">
+          <div class="page-header">
+            <div>
+              <div class="page-header-title">Campanhas de Email</div>
+              <div class="page-header-sub">Envios em massa para clientes cadastrados</div>
+            </div>
+            <button class="btn btn-primary" onclick="abrirCriarCampanha()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Nova campanha
+            </button>
+          </div>
+
+          <div id="camp-loading" class="loading"><div class="spinner"></div> Carregando campanhas…</div>
+          <div class="table-card" id="camp-tabela" style="display:none">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nome</th><th>Status</th><th>Destinatários</th><th>Enviados</th><th>Falhas</th><th>Criada em</th><th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-campanhas"></tbody>
+              </table>
+            </div>
+          </div>
+          <div id="camp-vazia" style="display:none;text-align:center;padding:48px;color:var(--text-dim)">
+            Nenhuma campanha criada. Clique em <strong>Nova campanha</strong> para começar.
+          </div>
+        </div>
+
+        <!-- ── VIEW: CRIAR ─────────────────────────────────────────────────── -->
+        <div id="camp-view-criar" style="display:none">
+          <div class="page-header">
+            <div>
+              <div class="page-header-title">Nova campanha</div>
+              <div class="page-header-sub">Preencha os dados e revise antes de criar</div>
+            </div>
+            <button class="btn btn-outline" onclick="mostrarViewLista()">← Voltar</button>
+          </div>
+
+          <div class="config-card">
+            <div class="config-card-header">
+              <div class="config-card-icon green">📧</div>
+              <div>
+                <div class="config-card-title">Identificação</div>
+                <div class="config-card-sub">Nome interno e dados do email</div>
+              </div>
+            </div>
+            <div class="config-grid">
+              <div class="form-group span2">
+                <label>Nome da campanha *</label>
+                <input type="text" id="camp-nome" placeholder="Ex: Promoção de Maio">
+              </div>
+              <div class="form-group span2">
+                <label>Assunto do email *</label>
+                <input type="text" id="camp-assunto" placeholder="Ex: 🎉 Oferta especial para você, {{primeiro_nome}}!">
+              </div>
+              <div class="form-group">
+                <label>Remetente (nome) <span style="color:var(--text-dim);font-weight:400">— opcional</span></label>
+                <input type="text" id="camp-rem-nome" placeholder="Usa o padrão das Configurações">
+              </div>
+              <div class="form-group">
+                <label>Remetente (email) <span style="color:var(--text-dim);font-weight:400">— opcional</span></label>
+                <input type="email" id="camp-rem-email" placeholder="Usa o padrão das Configurações">
+              </div>
+            </div>
+          </div>
+
+          <div class="config-card" style="margin-top:16px">
+            <div class="config-card-header">
+              <div class="config-card-icon green">🎯</div>
+              <div>
+                <div class="config-card-title">Audiência e filtros</div>
+                <div class="config-card-sub">Selecione quem receberá esta campanha</div>
+              </div>
+            </div>
+            <div class="config-grid">
+              <div class="form-group">
+                <label>Plano</label>
+                <select id="camp-filtro-plano">
+                  <option value="">Todos os planos</option>
+                  <option value="Essencial">Essencial</option>
+                  <option value="Controle">Controle</option>
+                  <option value="Avançado">Avançado</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Status do lead</label>
+                <select id="camp-filtro-status">
+                  <option value="">Todos</option>
+                  <option value="trial">Trial</option>
+                  <option value="cliente">Cliente</option>
+                  <option value="inativo">Inativo</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Loja bloqueada</label>
+                <select id="camp-filtro-bloqueada">
+                  <option value="">Indiferente</option>
+                  <option value="false">Não bloqueada</option>
+                  <option value="true">Bloqueada</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Busca por nome / loja / email</label>
+                <input type="text" id="camp-filtro-search" placeholder="Pesquisar…">
+              </div>
+            </div>
+            <div style="margin-top:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <button class="btn btn-outline" id="btn-preview-camp" onclick="previewAudiencia()">
+                🔍 Calcular audiência
+              </button>
+              <div id="camp-preview-result" style="font-size:14px;color:var(--text-dim)"></div>
+            </div>
+          </div>
+
+          <div class="config-card" style="margin-top:16px">
+            <div class="config-card-header">
+              <div class="config-card-icon green">✍️</div>
+              <div>
+                <div class="config-card-title">Corpo do email</div>
+                <div class="config-card-sub">Suporta HTML. Placeholders: {{nome}}, {{primeiro_nome}}, {{email}}, {{nome_loja}}</div>
+              </div>
+            </div>
+            <div class="form-group" style="margin-top:8px">
+              <textarea id="camp-corpo" rows="14" style="width:100%;font-family:monospace;font-size:13px;padding:10px;border:1px solid var(--border);border-radius:8px;resize:vertical" placeholder="<p>Olá {{primeiro_nome}},</p>&#10;<p>Temos uma novidade para você...</p>"></textarea>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:16px">
+            <button class="btn btn-outline" onclick="mostrarViewLista()">Cancelar</button>
+            <button class="btn btn-primary" id="btn-criar-campanha" onclick="salvarCampanha()">Criar campanha</button>
+          </div>
+        </div>
+
+        <!-- ── VIEW: DETALHE ───────────────────────────────────────────────── -->
+        <div id="camp-view-detalhe" style="display:none">
+          <div class="page-header">
+            <div>
+              <div class="page-header-title" id="camp-det-nome">—</div>
+              <div class="page-header-sub" id="camp-det-sub">—</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-outline" onclick="mostrarViewLista()">← Voltar</button>
+              <button class="btn btn-primary" id="btn-disparar" onclick="dispararCampanha()" style="display:none">▶ Disparar envio</button>
+            </div>
+          </div>
+
+          <!-- Stats cards -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px">
+            <div class="kpi-card"><div class="kpi-label">Destinatários</div><div class="kpi-value" id="camp-stat-total">—</div></div>
+            <div class="kpi-card"><div class="kpi-label">Enviados</div><div class="kpi-value" id="camp-stat-enviados" style="color:#16a34a">—</div></div>
+            <div class="kpi-card"><div class="kpi-label">Falhas</div><div class="kpi-value" id="camp-stat-falhas" style="color:#dc2626">—</div></div>
+            <div class="kpi-card"><div class="kpi-label">Sem email</div><div class="kpi-value" id="camp-stat-sem-email" style="color:#9ca3af">—</div></div>
+          </div>
+
+          <!-- Progress bar -->
+          <div id="camp-progress-wrap" style="display:none;margin-bottom:20px">
+            <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text-dim);margin-bottom:6px">
+              <span>Progresso do envio</span>
+              <span id="camp-progress-pct">0%</span>
+            </div>
+            <div style="background:#e5e7eb;border-radius:999px;height:8px;overflow:hidden">
+              <div id="camp-progress-bar" style="height:100%;background:#16a34a;width:0%;transition:width .4s ease;border-radius:999px"></div>
+            </div>
+          </div>
+
+          <!-- Destinatários table -->
+          <div class="table-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px">
+              <div style="display:flex;gap:6px;flex-wrap:wrap" id="camp-det-status-tabs">
+                <button class="btn btn-outline camp-status-tab active" data-status="todos" onclick="filtrarDestinatarios('todos',this)">Todos</button>
+                <button class="btn btn-outline camp-status-tab" data-status="pendente" onclick="filtrarDestinatarios('pendente',this)">Pendentes</button>
+                <button class="btn btn-outline camp-status-tab" data-status="enviado" onclick="filtrarDestinatarios('enviado',this)">Enviados</button>
+                <button class="btn btn-outline camp-status-tab" data-status="falhou" onclick="filtrarDestinatarios('falhou',this)">Falhou</button>
+                <button class="btn btn-outline camp-status-tab" data-status="sem_email" onclick="filtrarDestinatarios('sem_email',this)">Sem email</button>
+              </div>
+              <input type="text" id="camp-det-search" placeholder="Buscar destinatário…" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:200px" oninput="filtrarDestinatarios(campDetStatusAtual, null, this.value)">
+            </div>
+            <div id="camp-det-loading" class="loading" style="display:none"><div class="spinner"></div></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Nome</th><th>Loja</th><th>Email</th><th>Status</th><th>Enviado em</th><th>Erro</th></tr></thead>
+                <tbody id="tbody-camp-dests"></tbody>
+              </table>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;font-size:13px;color:var(--text-dim)" id="camp-det-paginacao">
+              <span id="camp-det-pag-info"></span>
+              <div style="display:flex;gap:6px">
+                <button class="btn btn-outline" id="btn-dest-prev" onclick="mudarPaginaDests(-1)">‹ Anterior</button>
+                <button class="btn btn-outline" id="btn-dest-next" onclick="mudarPaginaDests(1)">Próxima ›</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
       <!-- ── TAB: CONFIGURAÇÕES ─────────────────────────────────────────── -->
       <div id="tab-configuracoes" class="tab-panel">
         <div class="page-header">
@@ -796,6 +1007,41 @@ tr:hover td{background:#f8fafc;}
 
         <!-- Acesso -->
         <div class="config-card">
+          <div class="config-card-header">
+            <div class="config-card-icon" style="background:rgba(59,130,246,.12);font-size:18px">📨</div>
+            <div>
+              <div class="config-card-title">Email Marketing</div>
+              <div class="config-card-sub">API de envio de emails para campanhas em massa</div>
+            </div>
+          </div>
+          <div class="config-grid">
+            <div class="form-group span2">
+              <label>URL da API de email</label>
+              <input type="url" id="cfg-email-api-url" placeholder="https://api.mailgrid.net.br/sendmail/">
+            </div>
+            <div class="form-group">
+              <label>Usuário / host SMTP</label>
+              <input type="text" id="cfg-email-api-user" placeholder="usuario@seudominio.com">
+            </div>
+            <div class="form-group">
+              <label>Senha da API</label>
+              <div class="pw-wrap">
+                <input type="password" id="cfg-email-api-pass" placeholder="Deixe em branco para manter">
+                <button class="pw-toggle" onclick="togglePw('cfg-email-api-pass', this)">👁</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Email remetente padrão</label>
+              <input type="email" id="cfg-email-from-addr" placeholder="noreply@seudominio.com">
+            </div>
+            <div class="form-group">
+              <label>Nome remetente padrão</label>
+              <input type="text" id="cfg-email-from-name" placeholder="eRevendedor">
+            </div>
+          </div>
+        </div>
+
+        <div class="config-card" style="margin-top:16px">
           <div class="config-card-header">
             <div class="config-card-icon red">🔒</div>
             <div>
@@ -1179,6 +1425,7 @@ const TAB_TITLES = {
   clientes:      ['Clientes', 'Gerencie todas as lojas cadastradas'],
   notificacoes:  ['Notificações', 'Histórico de notificações enviadas'],
   dispositivos:  ['Dispositivos', 'Apps mobile conectados ao eRevendedor'],
+  campanhas:     ['Campanhas', 'Email em massa para clientes'],
   configuracoes: ['Configurações', 'Parâmetros do sistema e integrações'],
 };
 
@@ -1196,6 +1443,7 @@ function mudarTab(nome, btn) {
   if (nome === 'clientes') filtrarClientes();
   if (nome === 'notificacoes') carregarNotificacoes();
   if (nome === 'dispositivos') carregarDispositivos();
+  if (nome === 'campanhas') carregarCampanhas();
   if (nome === 'configuracoes') carregarConfiguracoes();
 }
 
@@ -2105,6 +2353,15 @@ async function carregarConfiguracoes() {
     const elAppSecret = document.getElementById('cfg-app-secret');
     elAppSecret.value = '';
     elAppSecret.placeholder = c.appSecretDefinido ? 'Definido — deixe em branco para manter' : 'Clique em 🔑 Gerar ou cole o valor aqui';
+
+    // Email marketing
+    document.getElementById('cfg-email-api-url').value = c.emailApiUrl || '';
+    document.getElementById('cfg-email-api-user').value = c.emailApiUser || '';
+    const elEmailPass = document.getElementById('cfg-email-api-pass');
+    elEmailPass.value = '';
+    elEmailPass.placeholder = c.emailApiPassDefinido ? 'Senha definida — deixe em branco para manter' : 'Deixe em branco para manter';
+    document.getElementById('cfg-email-from-addr').value = c.emailFromAddress || '';
+    document.getElementById('cfg-email-from-name').value = c.emailFromName || '';
   } catch { toast('Erro ao carregar configurações', 'error'); }
 }
 
@@ -2155,6 +2412,11 @@ async function salvarConfiguracoes() {
     asaasToken: document.getElementById('cfg-asaas-token').value,
     asaasAmbiente: document.getElementById('cfg-asaas-amb').value,
     asaasWebhookToken: document.getElementById('cfg-asaas-webhook-token').value,
+    emailApiUrl: document.getElementById('cfg-email-api-url').value.trim(),
+    emailApiUser: document.getElementById('cfg-email-api-user').value.trim(),
+    emailApiPass: document.getElementById('cfg-email-api-pass').value,
+    emailFromAddress: document.getElementById('cfg-email-from-addr').value.trim(),
+    emailFromName: document.getElementById('cfg-email-from-name').value.trim(),
   };
 
   const novoSecret = document.getElementById('cfg-admin-secret').value.trim();
@@ -2171,6 +2433,337 @@ async function salvarConfiguracoes() {
       sessionStorage.setItem('erev_token', novoSecret);
     }
     setTimeout(carregarConfiguracoes, 500);
+  } catch { toast('Erro de conexão', 'error'); }
+}
+
+// ─── Campanhas ─────────────────────────────────────────────────────────────
+
+let campDetId = null;
+let campDetStatusAtual = 'todos';
+let campDetPage = 1;
+const CAMP_PER_PAGE = 50;
+let campAutoRefreshTimer = null;
+
+function mostrarViewLista() {
+  document.getElementById('camp-view-lista').style.display = '';
+  document.getElementById('camp-view-criar').style.display = 'none';
+  document.getElementById('camp-view-detalhe').style.display = 'none';
+  pararAutoRefresh();
+  carregarCampanhas();
+}
+
+function abrirCriarCampanha() {
+  document.getElementById('camp-view-lista').style.display = 'none';
+  document.getElementById('camp-view-criar').style.display = '';
+  document.getElementById('camp-view-detalhe').style.display = 'none';
+  // reset form
+  ['camp-nome','camp-assunto','camp-rem-nome','camp-rem-email','camp-corpo'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('camp-filtro-plano').value = '';
+  document.getElementById('camp-filtro-status').value = '';
+  document.getElementById('camp-filtro-bloqueada').value = '';
+  document.getElementById('camp-filtro-search').value = '';
+  document.getElementById('camp-preview-result').textContent = '';
+}
+
+async function carregarCampanhas() {
+  document.getElementById('camp-loading').style.display = 'flex';
+  document.getElementById('camp-tabela').style.display = 'none';
+  document.getElementById('camp-vazia').style.display = 'none';
+  try {
+    const r = await api('/campanhas');
+    if (!r.ok) throw new Error();
+    const { campanhas } = await r.json();
+    document.getElementById('camp-loading').style.display = 'none';
+    if (!campanhas.length) {
+      document.getElementById('camp-vazia').style.display = '';
+      return;
+    }
+    document.getElementById('camp-tabela').style.display = '';
+    const tbody = document.getElementById('tbody-campanhas');
+    tbody.innerHTML = campanhas.map(c => `
+      <tr>
+        <td><strong>${esc(c.nome)}</strong></td>
+        <td>${badgeCampStatus(c.status)}</td>
+        <td>${c.totalDestinatarios}</td>
+        <td style="color:#16a34a">${c.totalEnviados}</td>
+        <td style="color:#dc2626">${c.totalFalhas}</td>
+        <td>${formatarData(c.criadoEm)}</td>
+        <td>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-outline" style="padding:4px 10px;font-size:12px" onclick="abrirDetalheCampanha('${c.id}','${esc(c.nome)}')">Ver</button>
+            ${c.status === 'rascunho' ? `<button class="btn btn-primary" style="padding:4px 10px;font-size:12px" onclick="dispararCampanha('${c.id}')">▶ Disparar</button>` : ''}
+            ${['rascunho','concluida','falha'].includes(c.status) ? `<button class="btn btn-danger" style="padding:4px 10px;font-size:12px" onclick="excluirCampanha('${c.id}','${esc(c.nome)}')">🗑</button>` : ''}
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  } catch {
+    document.getElementById('camp-loading').style.display = 'none';
+    toast('Erro ao carregar campanhas', 'error');
+  }
+}
+
+function badgeCampStatus(s) {
+  const map = {
+    rascunho: ['#f59e0b','#fffbeb','Rascunho'],
+    enviando: ['#3b82f6','#eff6ff','Enviando…'],
+    concluida: ['#16a34a','#f0fdf4','Concluída'],
+    falha: ['#dc2626','#fef2f2','Falha'],
+  };
+  const [color, bg, label] = map[s] || ['#9ca3af','#f3f4f6', s];
+  return `<span style="display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600;background:${bg};color:${color}">${label}</span>`;
+}
+
+// Preview de audiência
+let previewDebounce = null;
+async function previewAudiencia() {
+  const btn = document.getElementById('btn-preview-camp');
+  const resultado = document.getElementById('camp-preview-result');
+  btn.disabled = true;
+  resultado.textContent = 'Calculando…';
+  const params = new URLSearchParams({ audiencia: 'clientes' });
+  const plano = document.getElementById('camp-filtro-plano').value;
+  const statusLead = document.getElementById('camp-filtro-status').value;
+  const bloqueada = document.getElementById('camp-filtro-bloqueada').value;
+  const search = document.getElementById('camp-filtro-search').value.trim();
+  if (plano) params.set('plano', plano);
+  if (statusLead) params.set('statusLead', statusLead);
+  if (bloqueada !== '') params.set('lojaBloqueada', bloqueada);
+  if (search) params.set('search', search);
+  try {
+    const r = await api('/campanhas/preview?' + params.toString());
+    if (!r.ok) throw new Error();
+    const { total, amostra } = await r.json();
+    const amostraStr = amostra.map(a => a.nomeLoja || a.nome).join(', ');
+    resultado.innerHTML = `<strong>${total}</strong> destinatário(s)${amostra.length ? ` — ex: ${esc(amostraStr)}` : ''}`;
+  } catch {
+    resultado.textContent = 'Erro ao calcular';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function salvarCampanha() {
+  const nome = document.getElementById('camp-nome').value.trim();
+  const assunto = document.getElementById('camp-assunto').value.trim();
+  const corpo = document.getElementById('camp-corpo').value.trim();
+  if (!nome || !assunto || !corpo) {
+    toast('Preencha nome, assunto e corpo', 'error');
+    return;
+  }
+  const filtros = {};
+  const plano = document.getElementById('camp-filtro-plano').value;
+  const statusLead = document.getElementById('camp-filtro-status').value;
+  const bloqueada = document.getElementById('camp-filtro-bloqueada').value;
+  const search = document.getElementById('camp-filtro-search').value.trim();
+  if (plano) filtros.plano = plano;
+  if (statusLead) filtros.statusLead = statusLead;
+  if (bloqueada !== '') filtros.lojaBloqueada = bloqueada;
+  if (search) filtros.search = search;
+
+  const btn = document.getElementById('btn-criar-campanha');
+  btn.disabled = true;
+  btn.textContent = 'Criando…';
+  try {
+    const r = await api('/campanhas', {
+      method: 'POST',
+      body: JSON.stringify({
+        nome, assunto, corpo,
+        audiencia: 'clientes',
+        filtros,
+        remetenteNome: document.getElementById('camp-rem-nome').value.trim() || null,
+        remetenteEmail: document.getElementById('camp-rem-email').value.trim() || null,
+      }),
+    });
+    const data = await r.json();
+    if (!r.ok) { toast(data.erro || 'Erro ao criar campanha', 'error'); return; }
+    toast(`Campanha criada para ${data.totalDestinatarios} destinatário(s)!`);
+    mostrarViewLista();
+  } catch {
+    toast('Erro de conexão', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Criar campanha';
+  }
+}
+
+async function abrirDetalheCampanha(id, nome) {
+  campDetId = id;
+  campDetPage = 1;
+  campDetStatusAtual = 'todos';
+  document.getElementById('camp-view-lista').style.display = 'none';
+  document.getElementById('camp-view-criar').style.display = 'none';
+  document.getElementById('camp-view-detalhe').style.display = '';
+  document.getElementById('camp-det-nome').textContent = nome;
+  document.getElementById('camp-det-sub').textContent = '…';
+  document.getElementById('btn-disparar').style.display = 'none';
+  document.getElementById('tbody-camp-dests').innerHTML = '';
+  // reset tabs
+  document.querySelectorAll('.camp-status-tab').forEach(b => b.classList.toggle('active', b.dataset.status === 'todos'));
+  document.getElementById('camp-det-search').value = '';
+  await atualizarDetalheCampanha();
+}
+
+async function atualizarDetalheCampanha() {
+  if (!campDetId) return;
+  try {
+    const r = await api(`/campanhas/${campDetId}`);
+    if (!r.ok) return;
+    const c = await r.json();
+    const total = c.totalDestinatarios || 0;
+    const env = c.totalEnviados || 0;
+    const falhas = c.totalFalhas || 0;
+    const semEmail = (c.stats && c.stats.sem_email) || 0;
+
+    document.getElementById('camp-det-nome').textContent = c.nome;
+    document.getElementById('camp-det-sub').textContent = `Status: ${c.status} · ${total} destinatários`;
+    document.getElementById('camp-stat-total').textContent = total;
+    document.getElementById('camp-stat-enviados').textContent = env;
+    document.getElementById('camp-stat-falhas').textContent = falhas;
+    document.getElementById('camp-stat-sem-email').textContent = semEmail;
+
+    const progWrap = document.getElementById('camp-progress-wrap');
+    if (c.status === 'enviando') {
+      progWrap.style.display = '';
+      const pct = total > 0 ? Math.round(((env + falhas + semEmail) / total) * 100) : 0;
+      document.getElementById('camp-progress-bar').style.width = pct + '%';
+      document.getElementById('camp-progress-pct').textContent = pct + '%';
+      iniciarAutoRefresh();
+    } else {
+      progWrap.style.display = 'none';
+      pararAutoRefresh();
+    }
+
+    document.getElementById('btn-disparar').style.display = c.status === 'rascunho' ? '' : 'none';
+
+    await carregarDestinatarios();
+  } catch { /* silencioso */ }
+}
+
+function iniciarAutoRefresh() {
+  if (campAutoRefreshTimer) return;
+  campAutoRefreshTimer = setInterval(async () => {
+    if (!campDetId) { pararAutoRefresh(); return; }
+    const r = await api(`/campanhas/${campDetId}`).catch(() => null);
+    if (!r || !r.ok) return;
+    const c = await r.json();
+    const total = c.totalDestinatarios || 0;
+    const env = c.totalEnviados || 0;
+    const falhas = c.totalFalhas || 0;
+    const semEmail = (c.stats && c.stats.sem_email) || 0;
+    document.getElementById('camp-stat-enviados').textContent = env;
+    document.getElementById('camp-stat-falhas').textContent = falhas;
+    document.getElementById('camp-stat-sem-email').textContent = semEmail;
+    const pct = total > 0 ? Math.round(((env + falhas + semEmail) / total) * 100) : 0;
+    document.getElementById('camp-progress-bar').style.width = pct + '%';
+    document.getElementById('camp-progress-pct').textContent = pct + '%';
+    document.getElementById('camp-det-sub').textContent = `Status: ${c.status} · ${total} destinatários`;
+    if (c.status !== 'enviando') {
+      pararAutoRefresh();
+      document.getElementById('camp-progress-wrap').style.display = 'none';
+      document.getElementById('btn-disparar').style.display = 'none';
+      await carregarDestinatarios();
+    }
+  }, 4000);
+}
+
+function pararAutoRefresh() {
+  if (campAutoRefreshTimer) { clearInterval(campAutoRefreshTimer); campAutoRefreshTimer = null; }
+}
+
+async function carregarDestinatarios() {
+  document.getElementById('camp-det-loading').style.display = 'flex';
+  const params = new URLSearchParams({
+    page: campDetPage,
+    perPage: CAMP_PER_PAGE,
+  });
+  if (campDetStatusAtual !== 'todos') params.set('status', campDetStatusAtual);
+  const search = document.getElementById('camp-det-search').value.trim();
+  if (search) params.set('search', search);
+  try {
+    const r = await api(`/campanhas/${campDetId}/destinatarios?${params.toString()}`);
+    document.getElementById('camp-det-loading').style.display = 'none';
+    if (!r.ok) return;
+    const { destinatarios, total, page, perPage } = await r.json();
+    renderDestinatarios(destinatarios, total, page, perPage);
+  } catch {
+    document.getElementById('camp-det-loading').style.display = 'none';
+  }
+}
+
+function renderDestinatarios(lista, total, page, perPage) {
+  const tbody = document.getElementById('tbody-camp-dests');
+  tbody.innerHTML = lista.map(d => `
+    <tr>
+      <td>${esc(d.nome)}</td>
+      <td>${esc(d.nomeLoja || '—')}</td>
+      <td>${esc(d.email || '—')}</td>
+      <td>${badgeDestStatus(d.status)}</td>
+      <td style="font-size:12px">${d.enviadoEm ? formatarData(d.enviadoEm) : '—'}</td>
+      <td style="font-size:12px;color:#dc2626">${esc(d.erroMensagem || '')}</td>
+    </tr>
+  `).join('');
+
+  const totalPages = Math.ceil(total / perPage);
+  document.getElementById('camp-det-pag-info').textContent =
+    `${(page-1)*perPage + 1}–${Math.min(page*perPage, total)} de ${total}`;
+  document.getElementById('btn-dest-prev').disabled = page <= 1;
+  document.getElementById('btn-dest-next').disabled = page >= totalPages;
+}
+
+function badgeDestStatus(s) {
+  const map = {
+    pendente: ['#9ca3af','#f3f4f6','Pendente'],
+    enviado: ['#16a34a','#f0fdf4','Enviado'],
+    falhou: ['#dc2626','#fef2f2','Falhou'],
+    sem_email: ['#6b7280','#f3f4f6','Sem email'],
+  };
+  const [color, bg, label] = map[s] || ['#9ca3af','#f3f4f6', s];
+  return `<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;background:${bg};color:${color}">${label}</span>`;
+}
+
+function filtrarDestinatarios(status, btn, search) {
+  if (btn) {
+    document.querySelectorAll('.camp-status-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    campDetStatusAtual = status;
+    campDetPage = 1;
+  }
+  carregarDestinatarios();
+}
+
+function mudarPaginaDests(delta) {
+  campDetPage = Math.max(1, campDetPage + delta);
+  carregarDestinatarios();
+}
+
+async function dispararCampanha(idParam) {
+  const id = idParam || campDetId;
+  if (!id) return;
+  if (!confirm('Confirma o disparo da campanha? Os emails serão enviados agora.')) return;
+  try {
+    const r = await api(`/campanhas/${id}/enviar`, { method: 'POST' });
+    const data = await r.json();
+    if (!r.ok) { toast(data.erro || 'Erro ao disparar', 'error'); return; }
+    toast(data.mensagem || 'Campanha disparada!');
+    if (idParam) {
+      // disparado da lista → abrir detalhe
+      await abrirDetalheCampanha(id, '…');
+    } else {
+      await atualizarDetalheCampanha();
+    }
+  } catch { toast('Erro de conexão', 'error'); }
+}
+
+async function excluirCampanha(id, nome) {
+  if (!confirm(`Excluir a campanha "${nome}"?`)) return;
+  try {
+    const r = await api(`/campanhas/${id}`, { method: 'DELETE' });
+    if (!r.ok) { const d = await r.json(); toast(d.erro || 'Erro ao excluir', 'error'); return; }
+    toast('Campanha excluída');
+    carregarCampanhas();
   } catch { toast('Erro de conexão', 'error'); }
 }
 
