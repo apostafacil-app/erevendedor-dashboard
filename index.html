@@ -1009,13 +1009,17 @@ tr:hover td{background:#f8fafc;}
 
         <!-- Acesso -->
         <div class="config-card">
-          <div class="config-card-header">
-            <div class="config-card-icon" style="background:rgba(59,130,246,.12);font-size:18px">📨</div>
-            <div>
-              <div class="config-card-title">Email Marketing</div>
-              <div class="config-card-sub">API de envio de emails para campanhas em massa</div>
+          <div class="config-card-header" style="justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:14px">
+              <div class="config-card-icon" style="background:rgba(59,130,246,.12);font-size:18px">📨</div>
+              <div>
+                <div class="config-card-title">Email Marketing</div>
+                <div class="config-card-sub">API de envio de emails para campanhas em massa</div>
+              </div>
             </div>
+            <button class="btn btn-secondary" id="btn-testar-email" onclick="testarConexaoEmail()" style="white-space:nowrap">🧪 Testar conexão</button>
           </div>
+          <div id="email-teste-resultado" style="display:none;margin-bottom:12px;padding:10px 14px;border-radius:8px;font-size:13px"></div>
           <div class="config-grid">
             <div class="form-group span2">
               <label>URL do endpoint REST <span style="color:var(--text-dim);font-weight:400;font-size:11px">(sempre https://api.mailgrid.net.br/sendmail/)</span></label>
@@ -2370,6 +2374,33 @@ async function carregarConfiguracoes() {
     document.getElementById('cfg-email-from-addr').value = c.emailFromAddress || '';
     document.getElementById('cfg-email-from-name').value = c.emailFromName || '';
   } catch { toast('Erro ao carregar configurações', 'error'); }
+}
+
+async function testarConexaoEmail() {
+  const btn = document.getElementById('btn-testar-email');
+  const box = document.getElementById('email-teste-resultado');
+  btn.disabled = true;
+  btn.textContent = '⏳ Testando…';
+  box.style.display = 'none';
+
+  try {
+    const r = await api('/configuracoes/email/testar', { method: 'POST', body: JSON.stringify({}) });
+    const data = await r.json();
+    if (data.ok) {
+      box.style.cssText = 'display:block;padding:10px 14px;border-radius:8px;font-size:13px;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0';
+      box.textContent = '✅ Email de teste enviado para ' + data.para + '! Verifique a caixa de entrada.';
+    } else {
+      const detalhe = data.erro || JSON.stringify(data.resposta);
+      box.style.cssText = 'display:block;padding:10px 14px;border-radius:8px;font-size:13px;background:#fef2f2;color:#991b1b;border:1px solid #fecaca';
+      box.textContent = '❌ Falha: ' + detalhe;
+    }
+  } catch (e) {
+    box.style.cssText = 'display:block;padding:10px 14px;border-radius:8px;font-size:13px;background:#fef2f2;color:#991b1b;border:1px solid #fecaca';
+    box.textContent = '❌ Erro de conexão: ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🧪 Testar conexão';
+  }
 }
 
 async function executarChecagemAgora() {
