@@ -2707,11 +2707,21 @@ async function carregarDestinatarios() {
   try {
     const r = await api(`/campanhas/${campDetId}/destinatarios?${params.toString()}`);
     document.getElementById('camp-det-loading').style.display = 'none';
-    if (!r.ok) return;
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      document.getElementById('tbody-camp-dests').innerHTML =
+        `<tr><td colspan="6" style="text-align:center;color:#dc2626;padding:20px">
+          Erro ao carregar destinatários: ${esc(err.erro || `HTTP ${r.status}`)}
+          ${r.status === 500 ? '<br><small>Índice Firestore pode estar sendo criado — aguarde ~2 min e tente novamente.</small>' : ''}
+        </td></tr>`;
+      return;
+    }
     const { destinatarios, total, page, perPage } = await r.json();
     renderDestinatarios(destinatarios, total, page, perPage);
-  } catch {
+  } catch (e) {
     document.getElementById('camp-det-loading').style.display = 'none';
+    document.getElementById('tbody-camp-dests').innerHTML =
+      `<tr><td colspan="6" style="text-align:center;color:#dc2626;padding:20px">Erro de conexão: ${esc(String(e))}</td></tr>`;
   }
 }
 
