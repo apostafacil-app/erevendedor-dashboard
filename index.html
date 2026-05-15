@@ -670,11 +670,11 @@ tr:hover td{background:#f8fafc;}
             <div class="config-grid">
               <div class="form-group span2">
                 <label>Nome da campanha *</label>
-                <input type="text" id="camp-nome" placeholder="Ex: Promoção de Maio">
+                <input type="text" id="camp-nome" placeholder="Ex: Promoção de Maio" oninput="this.style.border=''">
               </div>
               <div class="form-group span2">
                 <label>Assunto do email *</label>
-                <input type="text" id="camp-assunto" placeholder="Ex: 🎉 Oferta especial para você, {{primeiro_nome}}!">
+                <input type="text" id="camp-assunto" placeholder="Ex: 🎉 Oferta especial para você, {{primeiro_nome}}!" oninput="this.style.border=''">
               </div>
               <div class="form-group">
                 <label>Remetente (nome) <span style="color:var(--text-dim);font-weight:400">— opcional</span></label>
@@ -744,7 +744,7 @@ tr:hover td{background:#f8fafc;}
               </div>
             </div>
             <div class="form-group" style="margin-top:8px">
-              <textarea id="camp-corpo" rows="14" style="width:100%;font-family:monospace;font-size:13px;padding:10px;border:1px solid var(--border);border-radius:8px;resize:vertical" placeholder="<p>Olá {{primeiro_nome}},</p>&#10;<p>Temos uma novidade para você...</p>"></textarea>
+              <textarea id="camp-corpo" rows="14" style="width:100%;font-family:monospace;font-size:13px;padding:10px;border:1px solid var(--border);border-radius:8px;resize:vertical" placeholder="<p>Olá {{primeiro_nome}},</p>&#10;<p>Temos uma novidade para você...</p>" oninput="this.style.border=''"></textarea>
             </div>
           </div>
 
@@ -2546,11 +2546,33 @@ async function previewAudiencia() {
 }
 
 async function salvarCampanha() {
+  // Limpa erros anteriores
+  ['camp-nome','camp-assunto','camp-corpo'].forEach(id => {
+    document.getElementById(id).style.border = '';
+  });
+
   const nome = document.getElementById('camp-nome').value.trim();
   const assunto = document.getElementById('camp-assunto').value.trim();
   const corpo = document.getElementById('camp-corpo').value.trim();
-  if (!nome || !assunto || !corpo) {
-    toast('Preencha nome, assunto e corpo', 'error');
+
+  // Valida campos obrigatórios com destaque visual
+  const erros = [];
+  if (!nome)   { erros.push('camp-nome');   }
+  if (!assunto){ erros.push('camp-assunto'); }
+  if (!corpo)  { erros.push('camp-corpo');   }
+
+  if (erros.length) {
+    erros.forEach(id => {
+      document.getElementById(id).style.border = '2px solid #dc2626';
+    });
+    // Scroll para o primeiro campo vazio
+    document.getElementById(erros[0]).scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById(erros[0]).focus();
+    toast(`Preencha: ${erros.map(id => ({
+      'camp-nome': 'Nome da campanha',
+      'camp-assunto': 'Assunto',
+      'camp-corpo': 'Corpo do email',
+    }[id])).join(', ')}`, 'error');
     return;
   }
   const filtros = {};
