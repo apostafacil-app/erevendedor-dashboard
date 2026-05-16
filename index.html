@@ -2596,7 +2596,10 @@ function campCriarLimparErro() {
   if (el) { el.textContent = ''; el.style.display = 'none'; }
 }
 
+let _salvarEmAndamento = false;
 async function salvarCampanha() {
+  if (_salvarEmAndamento) return;
+  _salvarEmAndamento = true;
   console.log('[salvarCampanha] iniciado');
   campCriarLimparErro();
 
@@ -2676,6 +2679,7 @@ async function salvarCampanha() {
     campCriarMostrarErro('Erro de conexão: ' + e.message);
     toast('Erro de conexão', 'error');
   } finally {
+    _salvarEmAndamento = false;
     btn.disabled = false;
     btn.textContent = 'Criar campanha';
   }
@@ -2695,6 +2699,8 @@ async function abrirDetalheCampanha(id, nome) {
   // reset tabs
   document.querySelectorAll('.camp-status-tab').forEach(b => b.classList.toggle('active', b.dataset.status === 'todos'));
   document.getElementById('camp-det-search').value = '';
+  // Rola para o topo para garantir que o usuário veja o detalhe
+  window.scrollTo({ top: 0, behavior: 'smooth' });
   await atualizarDetalheCampanha();
 }
 
